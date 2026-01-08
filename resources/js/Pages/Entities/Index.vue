@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import EntityModal from "@/Components/Entities/EntityModal.vue";
 
@@ -9,6 +9,7 @@ const loading = ref(true);
 const showModal = ref(false);
 const saving = ref(false);
 const errors = ref({});
+const filterStatus = ref("all");
 
 // modo
 const mode = ref("create"); // create | edit
@@ -33,6 +34,14 @@ const loadEntities = async () => {
         loading.value = false;
     }
 };
+
+const filteredEntities = computed(() => {
+    if (filterStatus.value === "all") {
+        return entities.value;
+    }
+
+    return entities.value.filter((e) => e.status === filterStatus.value);
+});
 
 // abrir modal criar
 const openCreateModal = () => {
@@ -146,6 +155,44 @@ onMounted(loadEntities);
             </button>
         </div>
 
+        <div class="flex gap-2 mb-4">
+            <button
+                @click="filterStatus = 'all'"
+                :class="[
+                    'px-4 py-2 rounded border',
+                    filterStatus === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700',
+                ]"
+            >
+                Todas
+            </button>
+
+            <button
+                @click="filterStatus = 'active'"
+                :class="[
+                    'px-4 py-2 rounded border',
+                    filterStatus === 'active'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-white text-gray-700',
+                ]"
+            >
+                Ativas
+            </button>
+
+            <button
+                @click="filterStatus = 'inactive'"
+                :class="[
+                    'px-4 py-2 rounded border',
+                    filterStatus === 'inactive'
+                        ? 'bg-gray-600 text-white'
+                        : 'bg-white text-gray-700',
+                ]"
+            >
+                Inativas
+            </button>
+        </div>
+
         <!-- tabela -->
         <table class="min-w-full border border-gray-200 table-fixed">
             <thead class="bg-gray-100">
@@ -160,7 +207,7 @@ onMounted(loadEntities);
             <tbody>
                 <tr
                     class="border-t hover:bg-gray-50"
-                    v-for="e in entities"
+                    v-for="e in filteredEntities"
                     :key="e.id"
                 >
                     <td class="px-3 py-2">{{ e.number }}</td>
