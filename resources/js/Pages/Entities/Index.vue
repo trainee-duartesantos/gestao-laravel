@@ -4,6 +4,8 @@ import axios from "axios";
 import EntityModal from "@/Components/Entities/EntityModal.vue";
 import EntitiesFilters from "@/Components/Entities/EntitiesFilters.vue";
 import EntitiesPagination from "@/Components/Entities/EntitiesPagination.vue";
+import EntitiesPerPage from "@/Components/Entities/EntitiesPerPage.vue";
+
 import { watch } from "vue";
 
 // estado
@@ -18,12 +20,16 @@ const currentPage = ref(1);
 const lastPage = ref(1);
 const perPage = ref(10);
 const total = ref(0);
+const pagesCache = ref({});
 
 let searchTimeout = null;
 
 // modo
 const mode = ref("create"); // create | edit
 const editingId = ref(null);
+
+const error = ref(null); // mensagem de erro
+const hasLoaded = ref(false); // para saber se já tentou carregar
 
 // formulário
 const form = ref({
@@ -34,8 +40,12 @@ const form = ref({
     is_supplier: false,
 });
 
-const params = new URLSearchParams(window.location.search);
+const makeCacheKey = (page) => {
+    return `page=${page}|perPage=${perPage.value}|status=${filterStatus.value}|search=${search.value}`;
+};
 
+const params = new URLSearchParams(window.location.search);
+perPage.value = Number(params.get("per_page")) || 10;
 filterStatus.value = params.get("status") || "all";
 search.value = params.get("search") || "";
 currentPage.value = Number(params.get("page")) || 1;
@@ -55,6 +65,10 @@ const syncUrl = () => {
         params.set("search", search.value);
     }
 
+    if (perPage.value !== 10) {
+        params.set("per_page", perPage.value);
+    }
+
     const query = params.toString();
     const url = query ? `?${query}` : window.location.pathname;
 
@@ -63,6 +77,21 @@ const syncUrl = () => {
 
 // carregar entidades
 const loadEntities = async (page = 1) => {
+    const cacheKey = makeCacheKey(page);
+
+    error.value = null;
+
+    // 🧠 1️⃣ Se existir cache → usar
+    if (pagesCache.value[cacheKey]) {
+        const cached = pagesCache.value[cacheKey];
+        entities.value = cached.data;
+        currentPage.value = cached.currentPage;
+        lastPage.value = cached.lastPage;
+        total.value = cached.total;
+        syncUrl();
+        return;
+    }
+
     loading.value = true;
 
     try {
@@ -80,9 +109,23 @@ const loadEntities = async (page = 1) => {
         lastPage.value = response.data.last_page;
         total.value = response.data.total;
 
+        // 🧠 3️⃣ Guardar na cache
+        pagesCache.value[cacheKey] = {
+            data: response.data.data,
+            currentPage: response.data.current_page,
+            lastPage: response.data.last_page,
+            total: response.data.total,
+        };
+
         syncUrl();
+    } catch (e) {
+        error.value =
+            e.response?.status === 500
+                ? "Erro interno do servidor."
+                : "Não foi possível carregar as entidades. Verifica a ligação.";
     } finally {
         loading.value = false;
+        hasLoaded.value = true;
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 };
@@ -91,11 +134,18 @@ watch(search, () => {
     clearTimeout(searchTimeout);
 
     searchTimeout = setTimeout(() => {
+        pagesCache.value = {}; // 🔑 limpa cache
         loadEntities(1);
     }, 300);
 });
 
-watch([filterStatus, search], () => {
+watch(filterStatus, () => {
+    pagesCache.value = {};
+    loadEntities(1);
+});
+
+watch(perPage, () => {
+    pagesCache.value = {};
     loadEntities(1);
 });
 
@@ -263,6 +313,27 @@ onMounted(loadEntities);
             @update:search="search = $event"
         />
 
+        <div class="flex justify-between items-center mb-3">
+            <EntitiesPerPage v-model="perPage" />
+
+            <p class="text-sm text-gray-500">{{ total }} registos</p>
+        </div>
+
+        <div
+            v-if="error"
+            class="mb-4 rounded border border-red-200 bg-red-50 p-4 text-red-700"
+        >
+            <p class="font-medium">Ocorreu um erro</p>
+            <p class="text-sm mb-3">{{ error }}</p>
+
+            <button
+                class="px-4 py-2 bg-red-600 text-white rounded"
+                @click="loadEntities(currentPage)"
+            >
+                Tentar novamente
+            </button>
+        </div>
+
         <!-- tabela -->
         <table class="min-w-full border border-gray-200 table-fixed">
             <thead class="bg-gray-100">
@@ -352,9 +423,16 @@ onMounted(loadEntities);
                         </button>
                     </td>
                 </tr>
-                <tr v-if="!loading && entities.length === 0">
-                    <td colspan="5" class="text-center py-6 text-gray-500">
-                        Nenhuma entidade encontrada
+                <tr
+                    v-if="
+                        !loading && hasLoaded && entities.length === 0 && !error
+                    "
+                >
+                    <td colspan="5" class="py-10 text-center text-gray-500">
+                        <p class="font-medium">Nenhuma entidade encontrada</p>
+                        <p class="text-sm mt-1">
+                            Ajusta os filtros ou tenta outra pesquisa.
+                        </p>
                     </td>
                 </tr>
             </tbody>
