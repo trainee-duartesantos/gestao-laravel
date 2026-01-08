@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import EntityModal from "@/Components/Entities/EntityModal.vue";
 import EntitiesFilters from "@/Components/Entities/EntitiesFilters.vue";
+import { watch } from "vue";
 
 // estado
 const entities = ref([]);
@@ -12,6 +13,8 @@ const saving = ref(false);
 const errors = ref({});
 const filterStatus = ref("all");
 const search = ref("");
+const currentPage = ref(1);
+const perPage = ref(10);
 
 // modo
 const mode = ref("create"); // create | edit
@@ -52,6 +55,21 @@ const filteredEntities = computed(() => {
 
         return statusMatch && searchMatch;
     });
+});
+
+const paginatedEntities = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value;
+    return filteredEntities.value.slice(start, start + perPage.value);
+});
+
+const totalPages = computed(() =>
+    Math.ceil(filteredEntities.value.length / perPage.value)
+);
+
+watch(totalPages, () => {
+    if (currentPage.value > totalPages.value) {
+        currentPage.value = totalPages.value || 1;
+    }
 });
 
 const totalCount = computed(() => entities.value.length);
@@ -240,7 +258,7 @@ onMounted(loadEntities);
 
                 <tr
                     v-else
-                    v-for="e in filteredEntities"
+                    v-for="e in paginatedEntities"
                     :key="e.id"
                     class="border-t hover:bg-gray-50"
                 >
@@ -284,6 +302,33 @@ onMounted(loadEntities);
                 </tr>
             </tbody>
         </table>
+
+        <div
+            v-if="totalPages > 1"
+            class="flex items-center justify-between mt-6"
+        >
+            <p class="text-sm text-gray-600">
+                Página {{ currentPage }} de {{ totalPages }}
+            </p>
+
+            <div class="flex gap-2">
+                <button
+                    class="px-3 py-2 border rounded disabled:opacity-50"
+                    :disabled="currentPage === 1"
+                    @click="currentPage--"
+                >
+                    Anterior
+                </button>
+
+                <button
+                    class="px-3 py-2 border rounded disabled:opacity-50"
+                    :disabled="currentPage === totalPages"
+                    @click="currentPage++"
+                >
+                    Seguinte
+                </button>
+            </div>
+        </div>
 
         <div
             v-if="showConfirm"
