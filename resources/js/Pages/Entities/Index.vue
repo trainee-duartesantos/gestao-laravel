@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import EntityModal from "@/Components/Entities/EntityModal.vue";
 
 // estado
 const entities = ref([]);
@@ -153,51 +154,15 @@ onMounted(loadEntities);
             </tbody>
         </table>
 
-        <!-- MODAL -->
-        <div
-            v-if="showModal"
-            class="fixed inset-0 bg-black/40 flex justify-center items-center"
-        >
-            <div class="bg-white p-6 rounded w-full max-w-lg">
-                <h2 class="text-xl mb-4">
-                    {{
-                        mode === "create" ? "Nova Entidade" : "Editar Entidade"
-                    }}
-                </h2>
-
-                <input v-model="form.name" placeholder="Nome" class="input" />
-                <p v-if="errors.name" class="error">{{ errors.name[0] }}</p>
-
-                <input v-model="form.nif" placeholder="NIF" class="input" />
-                <p v-if="errors.nif" class="error">{{ errors.nif[0] }}</p>
-
-                <input v-model="form.email" placeholder="Email" class="input" />
-                <p v-if="errors.email" class="error">{{ errors.email[0] }}</p>
-
-                <div class="flex gap-4 mt-2">
-                    <label
-                        ><input type="checkbox" v-model="form.is_customer" />
-                        Cliente</label
-                    >
-                    <label
-                        ><input type="checkbox" v-model="form.is_supplier" />
-                        Fornecedor</label
-                    >
-                </div>
-
-                <div class="flex justify-end gap-2 mt-6">
-                    <button @click="showModal = false">Cancelar</button>
-                    <button
-                        @click="
-                            mode === 'create' ? createEntity() : updateEntity()
-                        "
-                        :disabled="saving"
-                        class="bg-blue-600 text-white px-4 py-2 rounded"
-                    >
-                        {{ saving ? "A guardar..." : "Guardar" }}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <!-- MODAL COMPONENTE -->
+        <EntityModal
+            :show="showModal"
+            :mode="mode"
+            v-model="form"
+            :errors="errors"
+            :saving="saving"
+            @update:show="showModal = $event"
+            @save="mode === 'create' ? createEntity() : updateEntity()"
+        />
     </div>
 </template>
