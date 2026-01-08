@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import EntityModal from "@/Components/Entities/EntityModal.vue";
 import EntitiesFilters from "@/Components/Entities/EntitiesFilters.vue";
+import EntitiesPagination from "@/Components/Entities/EntitiesPagination.vue";
 import { watch } from "vue";
 
 // estado
@@ -18,6 +19,8 @@ const lastPage = ref(1);
 const perPage = ref(10);
 const total = ref(0);
 
+let searchTimeout = null;
+
 // modo
 const mode = ref("create"); // create | edit
 const editingId = ref(null);
@@ -30,6 +33,33 @@ const form = ref({
     is_customer: true,
     is_supplier: false,
 });
+
+const params = new URLSearchParams(window.location.search);
+
+filterStatus.value = params.get("status") || "all";
+search.value = params.get("search") || "";
+currentPage.value = Number(params.get("page")) || 1;
+
+const syncUrl = () => {
+    const params = new URLSearchParams();
+
+    if (currentPage.value > 1) {
+        params.set("page", currentPage.value);
+    }
+
+    if (filterStatus.value !== "all") {
+        params.set("status", filterStatus.value);
+    }
+
+    if (search.value) {
+        params.set("search", search.value);
+    }
+
+    const query = params.toString();
+    const url = query ? `?${query}` : window.location.pathname;
+
+    window.history.replaceState({}, "", url);
+};
 
 // carregar entidades
 const loadEntities = async (page = 1) => {
@@ -49,39 +79,22 @@ const loadEntities = async (page = 1) => {
         currentPage.value = response.data.current_page;
         lastPage.value = response.data.last_page;
         total.value = response.data.total;
+
+        syncUrl();
     } finally {
         loading.value = false;
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 };
 
-/*
-const filteredEntities = computed(() => {
-    return entities.value.filter((e) => {
-        // filtro por estado
-        const statusMatch =
-            filterStatus.value === "all" || e.status === filterStatus.value;
+watch(search, () => {
+    clearTimeout(searchTimeout);
 
-        // pesquisa por nome ou NIF
-        const searchValue = search.value.toLowerCase();
-
-        const searchMatch =
-            e.name.toLowerCase().includes(searchValue) ||
-            e.nif_normalized.includes(searchValue);
-
-        return statusMatch && searchMatch;
-    });
-});
-*/
-/*
-const paginatedEntities = computed(() => {
-    const start = (currentPage.value - 1) * perPage.value;
-    return filteredEntities.value.slice(start, start + perPage.value);
+    searchTimeout = setTimeout(() => {
+        loadEntities(1);
+    }, 300);
 });
 
-const totalPages = computed(() =>
-    Math.ceil(filteredEntities.value.length / perPage.value)
-);
-*/
 watch([filterStatus, search], () => {
     loadEntities(1);
 });
@@ -191,6 +204,36 @@ const toggleStatusConfirmed = async () => {
     entityToToggle.value = null;
     await loadEntities();
 };
+
+const visiblePages = computed(() => {
+    const pages = [];
+    const delta = 2; // quantas páginas antes/depois da atual
+
+    let start = Math.max(1, currentPage.value - delta);
+    let end = Math.min(lastPage.value, currentPage.value + delta);
+
+    // garantir sempre mostrar a primeira página
+    if (start > 1) {
+        pages.push(1);
+        if (start > 2) {
+            pages.push("...");
+        }
+    }
+
+    for (let i = start; i <= end; i++) {
+        pages.push(i);
+    }
+
+    // garantir sempre mostrar a última página
+    if (end < lastPage.value) {
+        if (end < lastPage.value - 1) {
+            pages.push("...");
+        }
+        pages.push(lastPage.value);
+    }
+
+    return pages;
+});
 
 onMounted(loadEntities);
 </script>
@@ -317,37 +360,21 @@ onMounted(loadEntities);
             </tbody>
         </table>
 
-        <div v-if="lastPage > 1" class="flex items-center justify-between mt-6">
-            <p class="text-sm text-gray-600">
-                Página {{ currentPage }} de {{ lastPage }} ·
-                {{ total }} registos
-            </p>
+        <!-- Paginação -->
+        <EntitiesPagination
+            :current-page="currentPage"
+            :last-page="lastPage"
+            :total="total"
+            @change="loadEntities"
+        />
 
-            <div class="flex gap-2">
-                <button
-                    class="px-3 py-2 border rounded disabled:opacity-50"
-                    :disabled="currentPage === 1"
-                    @click="loadEntities(currentPage - 1)"
-                >
-                    Anterior
-                </button>
-
-                <button
-                    class="px-3 py-2 border rounded disabled:opacity-50"
-                    :disabled="currentPage === lastPage"
-                    @click="loadEntities(currentPage + 1)"
-                >
-                    Seguinte
-                </button>
-            </div>
-        </div>
-
+        <!-- Modal confirmação ação -->
         <div
             v-if="showConfirm"
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
             <div class="bg-white rounded shadow-lg p-6 w-full max-w-md">
-                <h2 class="text-lg font-semibold mb-3">Confirmar ação</h2>
+                <h2 class="text-lg font-semibold mb-3">Confirmação</h2>
 
                 <p class="mb-6">
                     Tens a certeza que pretendes
