@@ -267,10 +267,49 @@ onMounted(loadEntities);
                 </tr>
             </thead>
             <tbody>
+                <!-- SKELETON LOADING -->
                 <tr
-                    class="border-t hover:bg-gray-50"
+                    v-if="loading"
+                    v-for="n in 5"
+                    :key="'skeleton-' + n"
+                    class="border-t"
+                >
+                    <td class="px-3 py-3">
+                        <div
+                            class="h-4 w-10 bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    </td>
+
+                    <td class="px-3 py-3">
+                        <div
+                            class="h-4 w-3/4 bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    </td>
+
+                    <td class="px-3 py-3">
+                        <div
+                            class="h-4 w-32 bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    </td>
+
+                    <td class="px-3 py-3 text-center">
+                        <div
+                            class="h-5 w-16 mx-auto bg-gray-200 rounded-full animate-pulse"
+                        ></div>
+                    </td>
+
+                    <td class="px-3 py-3 text-center">
+                        <div
+                            class="h-4 w-20 mx-auto bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    </td>
+                </tr>
+
+                <tr
+                    v-else
                     v-for="e in filteredEntities"
                     :key="e.id"
+                    class="border-t hover:bg-gray-50"
                 >
                     <td class="px-3 py-2">{{ e.number }}</td>
                     <td class="px-3 py-2">{{ e.name }}</td>
@@ -303,6 +342,11 @@ onMounted(loadEntities);
                         >
                             {{ e.status === "active" ? "Desativar" : "Ativar" }}
                         </button>
+                    </td>
+                </tr>
+                <tr v-if="!loading && filteredEntities.length === 0">
+                    <td colspan="5" class="text-center py-6 text-gray-500">
+                        Nenhuma entidade encontrada
                     </td>
                 </tr>
             </tbody>
