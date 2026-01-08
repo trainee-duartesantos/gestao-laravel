@@ -40,6 +40,11 @@ Route::middleware('auth')->group(function () {
         Route::put('{entity}', [EntityController::class, 'update'])->name('entities.update');
         Route::delete('{entity}', [EntityController::class, 'destroy'])->name('entities.destroy');
     });
+    Route::patch(
+        '/entities/{entity}/toggle-status',
+        [EntityController::class, 'toggleStatus']
+    )->name('entities.toggleStatus');
+
 });
 
 require __DIR__.'/auth.php';

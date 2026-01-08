@@ -90,4 +90,16 @@ class EntityController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function toggleStatus(Entity $entity)
+    {
+        $entity->update([
+            'status' => $entity->status === 'active' ? 'inactive' : 'active',
+        ]);
+
+        return response()->json([
+            'status' => $entity->status,
+        ]);
+    }
+
 }

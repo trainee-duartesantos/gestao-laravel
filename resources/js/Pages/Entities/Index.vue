@@ -109,6 +109,27 @@ const resetForm = () => {
     };
 };
 
+const toggleStatus = async (entity) => {
+    await axios.patch(`/entities/${entity.id}/toggle-status`);
+    await loadEntities();
+};
+
+const showConfirm = ref(false);
+const entityToToggle = ref(null);
+
+const confirmToggle = (entity) => {
+    entityToToggle.value = entity;
+    showConfirm.value = true;
+};
+
+const toggleStatusConfirmed = async () => {
+    await axios.patch(`/entities/${entityToToggle.value.id}/toggle-status`);
+
+    showConfirm.value = false;
+    entityToToggle.value = null;
+    await loadEntities();
+};
+
 onMounted(loadEntities);
 </script>
 
@@ -126,33 +147,96 @@ onMounted(loadEntities);
         </div>
 
         <!-- tabela -->
-        <table class="min-w-full border">
+        <table class="min-w-full border border-gray-200 table-fixed">
             <thead class="bg-gray-100">
                 <tr>
-                    <th>Nº</th>
-                    <th>Nome</th>
-                    <th>NIF</th>
-                    <th>Estado</th>
-                    <th></th>
+                    <th class="w-16 px-3 py-2 text-left">Nº</th>
+                    <th class="px-3 py-2 text-left">Nome</th>
+                    <th class="w-40 px-3 py-2 text-left">NIF</th>
+                    <th class="w-28 px-3 py-2 text-center">Estado</th>
+                    <th class="w-40 px-3 py-2 text-center">Ações</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="e in entities" :key="e.id">
-                    <td>{{ e.number }}</td>
-                    <td>{{ e.name }}</td>
-                    <td>{{ e.nif_normalized }}</td>
-                    <td>{{ e.status }}</td>
-                    <td>
+                <tr
+                    class="border-t hover:bg-gray-50"
+                    v-for="e in entities"
+                    :key="e.id"
+                >
+                    <td class="px-3 py-2">{{ e.number }}</td>
+                    <td class="px-3 py-2">{{ e.name }}</td>
+                    <td class="px-3 py-2 font-mono text-sm">
+                        {{ e.nif_normalized }}
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                        <span
+                            :class="[
+                                'px-2 py-1 rounded text-xs font-medium',
+                                e.status === 'active'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-200 text-gray-600',
+                            ]"
+                        >
+                            {{ e.status }}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-center space-x-3">
                         <button
-                            class="text-blue-600 underline"
+                            class="text-blue-600 hover:underline"
                             @click="openEditModal(e)"
                         >
                             Editar
+                        </button>
+
+                        <button
+                            class="text-sm text-red-600 hover:underline"
+                            @click="confirmToggle(e)"
+                        >
+                            {{ e.status === "active" ? "Desativar" : "Ativar" }}
                         </button>
                     </td>
                 </tr>
             </tbody>
         </table>
+
+        <div
+            v-if="showConfirm"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+            <div class="bg-white rounded shadow-lg p-6 w-full max-w-md">
+                <h2 class="text-lg font-semibold mb-3">Confirmar ação</h2>
+
+                <p class="mb-6">
+                    Tens a certeza que pretendes
+                    <strong>
+                        {{
+                            entityToToggle?.status === "active"
+                                ? "desativar"
+                                : "ativar"
+                        }}
+                    </strong>
+                    a entidade
+                    <strong>{{ entityToToggle?.name }}</strong
+                    >?
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        class="px-4 py-2 border rounded"
+                        @click="showConfirm = false"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        class="px-4 py-2 bg-red-600 text-white rounded"
+                        @click="toggleStatusConfirmed"
+                    >
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- MODAL COMPONENTE -->
         <EntityModal
