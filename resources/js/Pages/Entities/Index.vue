@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import EntityModal from "@/Components/Entities/EntityModal.vue";
+import EntitiesFilters from "@/Components/Entities/EntitiesFilters.vue";
 
 // estado
 const entities = ref([]);
@@ -175,85 +176,17 @@ onMounted(loadEntities);
             </button>
         </div>
 
-        <div class="flex gap-2 mb-4">
-            <!-- Todas -->
-            <button
-                @click="filterStatus = 'all'"
-                :class="[
-                    'flex items-center gap-2 px-4 py-2 rounded border',
-                    filterStatus === 'all'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700',
-                ]"
-            >
-                Todas
-                <span
-                    class="text-xs px-2 py-0.5 rounded-full"
-                    :class="
-                        filterStatus === 'all'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-700'
-                    "
-                >
-                    {{ totalCount }}
-                </span>
-            </button>
-
-            <!-- Ativas -->
-            <button
-                @click="filterStatus = 'active'"
-                :class="[
-                    'flex items-center gap-2 px-4 py-2 rounded border',
-                    filterStatus === 'active'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-700',
-                ]"
-            >
-                Ativas
-                <span
-                    class="text-xs px-2 py-0.5 rounded-full"
-                    :class="
-                        filterStatus === 'active'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-green-100 text-green-700'
-                    "
-                >
-                    {{ activeCount }}
-                </span>
-            </button>
-
-            <!-- Inativas -->
-            <button
-                @click="filterStatus = 'inactive'"
-                :class="[
-                    'flex items-center gap-2 px-4 py-2 rounded border',
-                    filterStatus === 'inactive'
-                        ? 'bg-gray-600 text-white'
-                        : 'bg-white text-gray-700',
-                ]"
-            >
-                Inativas
-                <span
-                    class="text-xs px-2 py-0.5 rounded-full"
-                    :class="
-                        filterStatus === 'inactive'
-                            ? 'bg-gray-500 text-white'
-                            : 'bg-gray-200 text-gray-700'
-                    "
-                >
-                    {{ inactiveCount }}
-                </span>
-            </button>
-        </div>
-
-        <div class="mb-4">
-            <input
-                v-model="search"
-                type="text"
-                placeholder="Pesquisar por nome ou NIF…"
-                class="w-full max-w-md px-4 py-2 border rounded focus:ring focus:ring-blue-200"
-            />
-        </div>
+        <EntitiesFilters
+            :filter-status="filterStatus"
+            :search="search"
+            :counts="{
+                total: totalCount,
+                active: activeCount,
+                inactive: inactiveCount,
+            }"
+            @update:filterStatus="filterStatus = $event"
+            @update:search="search = $event"
+        />
 
         <!-- tabela -->
         <table class="min-w-full border border-gray-200 table-fixed">
