@@ -43,6 +43,16 @@ const filteredEntities = computed(() => {
     return entities.value.filter((e) => e.status === filterStatus.value);
 });
 
+const totalCount = computed(() => entities.value.length);
+
+const activeCount = computed(
+    () => entities.value.filter((e) => e.status === "active").length
+);
+
+const inactiveCount = computed(
+    () => entities.value.filter((e) => e.status === "inactive").length
+);
+
 // abrir modal criar
 const openCreateModal = () => {
     mode.value = "create";
@@ -156,40 +166,73 @@ onMounted(loadEntities);
         </div>
 
         <div class="flex gap-2 mb-4">
+            <!-- Todas -->
             <button
                 @click="filterStatus = 'all'"
                 :class="[
-                    'px-4 py-2 rounded border',
+                    'flex items-center gap-2 px-4 py-2 rounded border',
                     filterStatus === 'all'
                         ? 'bg-blue-600 text-white'
                         : 'bg-white text-gray-700',
                 ]"
             >
                 Todas
+                <span
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="
+                        filterStatus === 'all'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                    "
+                >
+                    {{ totalCount }}
+                </span>
             </button>
 
+            <!-- Ativas -->
             <button
                 @click="filterStatus = 'active'"
                 :class="[
-                    'px-4 py-2 rounded border',
+                    'flex items-center gap-2 px-4 py-2 rounded border',
                     filterStatus === 'active'
                         ? 'bg-green-600 text-white'
                         : 'bg-white text-gray-700',
                 ]"
             >
                 Ativas
+                <span
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="
+                        filterStatus === 'active'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-green-100 text-green-700'
+                    "
+                >
+                    {{ activeCount }}
+                </span>
             </button>
 
+            <!-- Inativas -->
             <button
                 @click="filterStatus = 'inactive'"
                 :class="[
-                    'px-4 py-2 rounded border',
+                    'flex items-center gap-2 px-4 py-2 rounded border',
                     filterStatus === 'inactive'
                         ? 'bg-gray-600 text-white'
                         : 'bg-white text-gray-700',
                 ]"
             >
                 Inativas
+                <span
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="
+                        filterStatus === 'inactive'
+                            ? 'bg-gray-500 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                    "
+                >
+                    {{ inactiveCount }}
+                </span>
             </button>
         </div>
 
