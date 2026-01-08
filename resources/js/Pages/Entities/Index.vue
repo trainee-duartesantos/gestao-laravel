@@ -14,7 +14,9 @@ const errors = ref({});
 const filterStatus = ref("all");
 const search = ref("");
 const currentPage = ref(1);
+const lastPage = ref(1);
 const perPage = ref(10);
+const total = ref(0);
 
 // modo
 const mode = ref("create"); // create | edit
@@ -30,16 +32,29 @@ const form = ref({
 });
 
 // carregar entidades
-const loadEntities = async () => {
+const loadEntities = async (page = 1) => {
     loading.value = true;
+
     try {
-        const response = await axios.get("/entities/list");
+        const response = await axios.get("/entities/list", {
+            params: {
+                page,
+                per_page: perPage.value,
+                status: filterStatus.value,
+                search: search.value,
+            },
+        });
+
         entities.value = response.data.data;
+        currentPage.value = response.data.current_page;
+        lastPage.value = response.data.last_page;
+        total.value = response.data.total;
     } finally {
         loading.value = false;
     }
 };
 
+/*
 const filteredEntities = computed(() => {
     return entities.value.filter((e) => {
         // filtro por estado
@@ -56,7 +71,8 @@ const filteredEntities = computed(() => {
         return statusMatch && searchMatch;
     });
 });
-
+*/
+/*
 const paginatedEntities = computed(() => {
     const start = (currentPage.value - 1) * perPage.value;
     return filteredEntities.value.slice(start, start + perPage.value);
@@ -65,11 +81,9 @@ const paginatedEntities = computed(() => {
 const totalPages = computed(() =>
     Math.ceil(filteredEntities.value.length / perPage.value)
 );
-
-watch(totalPages, () => {
-    if (currentPage.value > totalPages.value) {
-        currentPage.value = totalPages.value || 1;
-    }
+*/
+watch([filterStatus, search], () => {
+    loadEntities(1);
 });
 
 const totalCount = computed(() => entities.value.length);
@@ -258,7 +272,7 @@ onMounted(loadEntities);
 
                 <tr
                     v-else
-                    v-for="e in paginatedEntities"
+                    v-for="e in entities"
                     :key="e.id"
                     class="border-t hover:bg-gray-50"
                 >
@@ -295,7 +309,7 @@ onMounted(loadEntities);
                         </button>
                     </td>
                 </tr>
-                <tr v-if="!loading && filteredEntities.length === 0">
+                <tr v-if="!loading && entities.length === 0">
                     <td colspan="5" class="text-center py-6 text-gray-500">
                         Nenhuma entidade encontrada
                     </td>
@@ -303,27 +317,25 @@ onMounted(loadEntities);
             </tbody>
         </table>
 
-        <div
-            v-if="totalPages > 1"
-            class="flex items-center justify-between mt-6"
-        >
+        <div v-if="lastPage > 1" class="flex items-center justify-between mt-6">
             <p class="text-sm text-gray-600">
-                Página {{ currentPage }} de {{ totalPages }}
+                Página {{ currentPage }} de {{ lastPage }} ·
+                {{ total }} registos
             </p>
 
             <div class="flex gap-2">
                 <button
                     class="px-3 py-2 border rounded disabled:opacity-50"
                     :disabled="currentPage === 1"
-                    @click="currentPage--"
+                    @click="loadEntities(currentPage - 1)"
                 >
                     Anterior
                 </button>
 
                 <button
                     class="px-3 py-2 border rounded disabled:opacity-50"
-                    :disabled="currentPage === totalPages"
-                    @click="currentPage++"
+                    :disabled="currentPage === lastPage"
+                    @click="loadEntities(currentPage + 1)"
                 >
                     Seguinte
                 </button>

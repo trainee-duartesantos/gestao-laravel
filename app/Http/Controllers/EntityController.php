@@ -18,18 +18,41 @@ class EntityController extends Controller
     }
 
     // Listagem (JSON)
-    public function index()
+    public function index(Request $request)
     {
-        return Entity::orderBy('number')
-            ->paginate(15)
+        $search = $request->string('search')->trim();
+        $status = $request->string('status');
+        $perPage = $request->integer('per_page', 10);
+
+        $query = Entity::query()
+            ->orderBy('number');
+
+        // 🔍 Pesquisa por nome ou NIF
+        if ($search->isNotEmpty()) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('nif_normalized', 'like', "%{$search}%");
+            });
+        }
+
+        // 🔘 Filtro por estado
+        if (in_array($status, ['active', 'inactive'])) {
+            $query->where('status', $status);
+        }
+
+        return $query
+            ->paginate($perPage)
             ->through(fn ($e) => [
                 'id' => $e->id,
                 'number' => $e->number,
                 'name' => $e->name,
                 'nif_normalized' => $e->nif_normalized,
                 'status' => $e->status,
+                'is_customer' => $e->is_customer,
+                'is_supplier' => $e->is_supplier,
             ]);
     }
+
 
     // Criar entidade
     public function store(Request $request)
