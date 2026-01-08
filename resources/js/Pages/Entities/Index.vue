@@ -10,6 +10,7 @@ const showModal = ref(false);
 const saving = ref(false);
 const errors = ref({});
 const filterStatus = ref("all");
+const search = ref("");
 
 // modo
 const mode = ref("create"); // create | edit
@@ -36,11 +37,20 @@ const loadEntities = async () => {
 };
 
 const filteredEntities = computed(() => {
-    if (filterStatus.value === "all") {
-        return entities.value;
-    }
+    return entities.value.filter((e) => {
+        // filtro por estado
+        const statusMatch =
+            filterStatus.value === "all" || e.status === filterStatus.value;
 
-    return entities.value.filter((e) => e.status === filterStatus.value);
+        // pesquisa por nome ou NIF
+        const searchValue = search.value.toLowerCase();
+
+        const searchMatch =
+            e.name.toLowerCase().includes(searchValue) ||
+            e.nif_normalized.includes(searchValue);
+
+        return statusMatch && searchMatch;
+    });
 });
 
 const totalCount = computed(() => entities.value.length);
@@ -234,6 +244,15 @@ onMounted(loadEntities);
                     {{ inactiveCount }}
                 </span>
             </button>
+        </div>
+
+        <div class="mb-4">
+            <input
+                v-model="search"
+                type="text"
+                placeholder="Pesquisar por nome ou NIF…"
+                class="w-full max-w-md px-4 py-2 border rounded focus:ring focus:ring-blue-200"
+            />
         </div>
 
         <!-- tabela -->
