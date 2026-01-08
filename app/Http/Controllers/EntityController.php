@@ -65,4 +65,29 @@ class EntityController extends Controller
             'id' => $entity->id,
         ], 201);
     }
+
+    public function update(Request $request, Entity $entity)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nif' => [
+                'required',
+                'string',
+                Rule::unique('entities', 'nif_normalized')->ignore($entity->id),
+            ],
+            'email' => ['nullable', 'email'],
+            'is_customer' => ['boolean'],
+            'is_supplier' => ['boolean'],
+        ]);
+
+        $entity->update([
+            'name' => $validated['name'],
+            'nif_normalized' => $validated['nif'],
+            'email' => $validated['email'] ?? null,
+            'is_customer' => $validated['is_customer'] ?? false,
+            'is_supplier' => $validated['is_supplier'] ?? false,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }

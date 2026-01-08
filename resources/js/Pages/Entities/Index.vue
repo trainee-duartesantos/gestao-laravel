@@ -7,6 +7,11 @@ const entities = ref([]);
 const loading = ref(true);
 const showModal = ref(false);
 const saving = ref(false);
+const errors = ref({});
+
+// modo
+const mode = ref("create"); // create | edit
+const editingId = ref(null);
 
 // formulário
 const form = ref({
@@ -28,24 +33,43 @@ const loadEntities = async () => {
     }
 };
 
-// criar entidade ✅ AGORA DENTRO DE FUNÇÃO
+// abrir modal criar
+const openCreateModal = () => {
+    mode.value = "create";
+    editingId.value = null;
+    resetForm();
+    errors.value = {};
+    showModal.value = true;
+};
+
+// abrir modal editar
+const openEditModal = (entity) => {
+    mode.value = "edit";
+    editingId.value = entity.id;
+
+    form.value = {
+        name: entity.name,
+        nif: entity.nif_normalized,
+        email: "",
+        is_customer: entity.is_customer ?? false,
+        is_supplier: entity.is_supplier ?? false,
+    };
+
+    errors.value = {};
+    showModal.value = true;
+};
+
+// criar
 const createEntity = async () => {
     saving.value = true;
     try {
-        await axios.post("/entities", {
-            name: form.value.name,
-            nif: form.value.nif,
-            email: form.value.email,
-            is_customer: form.value.is_customer,
-            is_supplier: form.value.is_supplier,
-        });
-
+        await axios.post("/entities", form.value);
         showModal.value = false;
         resetForm();
         await loadEntities();
     } catch (e) {
         if (e.response?.status === 422) {
-            alert(Object.values(e.response.data.errors).flat().join("\n"));
+            errors.value = e.response.data.errors;
         } else {
             alert("Erro inesperado ao criar entidade");
         }
@@ -54,7 +78,26 @@ const createEntity = async () => {
     }
 };
 
-// reset formulário
+// atualizar
+const updateEntity = async () => {
+    saving.value = true;
+    try {
+        await axios.put(`/entities/${editingId.value}`, form.value);
+        showModal.value = false;
+        resetForm();
+        await loadEntities();
+    } catch (e) {
+        if (e.response?.status === 422) {
+            errors.value = e.response.data.errors;
+        } else {
+            alert("Erro inesperado ao atualizar entidade");
+        }
+    } finally {
+        saving.value = false;
+    }
+};
+
+// reset
 const resetForm = () => {
     form.value = {
         name: "",
@@ -70,40 +113,41 @@ onMounted(loadEntities);
 
 <template>
     <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex justify-between mb-6">
             <h1 class="text-2xl font-bold">Entidades</h1>
 
             <button
-                @click="showModal = true"
-                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                @click="openCreateModal"
+                class="bg-blue-600 text-white px-4 py-2 rounded"
             >
                 + Nova Entidade
             </button>
         </div>
 
         <!-- tabela -->
-        <table class="min-w-full border border-gray-200">
+        <table class="min-w-full border">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="border px-4 py-2 text-left">Nº</th>
-                    <th class="border px-4 py-2 text-left">Nome</th>
-                    <th class="border px-4 py-2 text-left">NIF</th>
-                    <th class="border px-4 py-2 text-left">Estado</th>
+                    <th>Nº</th>
+                    <th>Nome</th>
+                    <th>NIF</th>
+                    <th>Estado</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="entity in entities" :key="entity.id">
-                    <td class="border px-4 py-2">{{ entity.number }}</td>
-                    <td class="border px-4 py-2">{{ entity.name }}</td>
-                    <td class="border px-4 py-2">
-                        {{ entity.nif_normalized }}
-                    </td>
-                    <td class="border px-4 py-2">{{ entity.status }}</td>
-                </tr>
-
-                <tr v-if="!loading && entities && entities.length === 0">
-                    <td colspan="4" class="text-center py-4 text-gray-500">
-                        Nenhuma entidade encontrada
+                <tr v-for="e in entities" :key="e.id">
+                    <td>{{ e.number }}</td>
+                    <td>{{ e.name }}</td>
+                    <td>{{ e.nif_normalized }}</td>
+                    <td>{{ e.status }}</td>
+                    <td>
+                        <button
+                            class="text-blue-600 underline"
+                            @click="openEditModal(e)"
+                        >
+                            Editar
+                        </button>
                     </td>
                 </tr>
             </tbody>
@@ -112,58 +156,43 @@ onMounted(loadEntities);
         <!-- MODAL -->
         <div
             v-if="showModal"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/40 flex justify-center items-center"
         >
-            <div class="bg-white w-full max-w-lg rounded shadow-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Nova Entidade</h2>
+            <div class="bg-white p-6 rounded w-full max-w-lg">
+                <h2 class="text-xl mb-4">
+                    {{
+                        mode === "create" ? "Nova Entidade" : "Editar Entidade"
+                    }}
+                </h2>
 
-                <div class="space-y-4">
-                    <input
-                        v-model="form.name"
-                        type="text"
-                        placeholder="Nome"
-                        class="w-full border rounded px-3 py-2"
-                    />
+                <input v-model="form.name" placeholder="Nome" class="input" />
+                <p v-if="errors.name" class="error">{{ errors.name[0] }}</p>
 
-                    <input
-                        v-model="form.nif"
-                        type="text"
-                        placeholder="NIF"
-                        class="w-full border rounded px-3 py-2"
-                    />
+                <input v-model="form.nif" placeholder="NIF" class="input" />
+                <p v-if="errors.nif" class="error">{{ errors.nif[0] }}</p>
 
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        placeholder="Email"
-                        class="w-full border rounded px-3 py-2"
-                    />
+                <input v-model="form.email" placeholder="Email" class="input" />
+                <p v-if="errors.email" class="error">{{ errors.email[0] }}</p>
 
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" v-model="form.is_customer" />
-                            Cliente
-                        </label>
-
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" v-model="form.is_supplier" />
-                            Fornecedor
-                        </label>
-                    </div>
+                <div class="flex gap-4 mt-2">
+                    <label
+                        ><input type="checkbox" v-model="form.is_customer" />
+                        Cliente</label
+                    >
+                    <label
+                        ><input type="checkbox" v-model="form.is_supplier" />
+                        Fornecedor</label
+                    >
                 </div>
 
-                <div class="flex justify-end gap-3 mt-6">
+                <div class="flex justify-end gap-2 mt-6">
+                    <button @click="showModal = false">Cancelar</button>
                     <button
-                        @click="showModal = false"
-                        class="px-4 py-2 border rounded"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        @click="createEntity"
+                        @click="
+                            mode === 'create' ? createEntity() : updateEntity()
+                        "
                         :disabled="saving"
-                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                        class="bg-blue-600 text-white px-4 py-2 rounded"
                     >
                         {{ saving ? "A guardar..." : "Guardar" }}
                     </button>
