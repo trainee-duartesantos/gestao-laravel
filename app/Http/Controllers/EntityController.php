@@ -3,83 +3,66 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entity;
-use App\Services\NumberService;
-use App\Support\Hashing;
-use App\Support\Normalize;
-use App\Http\Requests\StoreEntityRequest;
-use App\Http\Requests\UpdateEntityRequest;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class EntityController extends Controller
 {
-    // LISTAGEM + FILTROS + PESQUISA
-    public function index(Request $request)
+    // Página Inertia
+    public function page()
     {
-        $query = Entity::query();
-
-        // filtros
-        if ($request->boolean('is_customer')) {
-            $query->where('is_customer', true);
-        }
-
-        if ($request->boolean('is_supplier')) {
-            $query->where('is_supplier', true);
-        }
-
-        if ($request->status) {
-            $query->where('status', $request->status);
-        }
-
-        // pesquisa por NIF
-        if ($request->nif) {
-            $query->where('nif_normalized', Normalize::vat($request->nif));
-        }
-
-        // pesquisa por email (hash)
-        if ($request->email) {
-            $hash = Hashing::sha256(Normalize::email($request->email));
-            $query->where('email_hash', $hash);
-        }
-
-        return response()->json(
-            $query->orderBy('number', 'desc')->paginate(15)
-        );
+        return Inertia::render('Entities/Index');
     }
 
-    // CRIAR
-    public function store(StoreEntityRequest $request)
+    // Listagem (JSON)
+    public function index()
     {
-        $number = NumberService::next('entity');
+        return Entity::orderBy('number')
+            ->paginate(15)
+            ->through(fn ($e) => [
+                'id' => $e->id,
+                'number' => $e->number,
+                'name' => $e->name,
+                'nif_normalized' => $e->nif_normalized,
+                'status' => $e->status,
+            ]);
+    }
 
-        $entity = Entity::create([
-            'number' => $number,
-            'nif_normalized' => $request->nif,
-            'name' => $request->name,
-            'email' => $request->email,
-            'is_customer' => $request->boolean('is_customer', true),
-            'is_supplier' => $request->boolean('is_supplier', false),
+    // Criar entidade
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nif' => [
+                'required',
+                'string',
+                Rule::unique('entities', 'nif_normalized'),
+            ],
+            'email' => ['nullable', 'email'],
+            'is_customer' => ['boolean'],
+            'is_supplier' => ['boolean'],
         ]);
 
-        return response()->json($entity, 201);
-    }
+        $entity = DB::transaction(function () use ($validated) {
+            $nextNumber = (Entity::max('number') ?? 0) + 1;
 
-    // DETALHE
-    public function show(Entity $entity)
-    {
-        return response()->json($entity->load('contacts'));
-    }
+            return Entity::create([
+                'number' => $nextNumber,
+                'name' => $validated['name'],
+                'nif_normalized' => $validated['nif'],
+                'email' => $validated['email'] ?? null,
+                'is_customer' => $validated['is_customer'] ?? false,
+                'is_supplier' => $validated['is_supplier'] ?? false,
+                'status' => 'active',
+            ]);
+        });
 
-    // ATUALIZAR
-    public function update(UpdateEntityRequest $request, Entity $entity)
-    {
-        $entity->update($request->validated());
-        return response()->json($entity);
-    }
-
-    // DESATIVAR (soft business delete)
-    public function destroy(Entity $entity)
-    {
-        $entity->update(['status' => 'inactive']);
-        return response()->json(['message' => 'Entity deactivated']);
+        return response()->json([
+            'success' => true,
+            'id' => $entity->id,
+        ], 201);
     }
 }

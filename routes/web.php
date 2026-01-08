@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\EntityController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -19,13 +20,26 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    Route::get('/entities', function () {
-        return Inertia::render('Entities/Index');
-    })->middleware(['auth'])->name('entities.index');
+
+    // ===== ENTITIES =====
+
+    // Página Inertia (UI)
+    Route::get('/entities', [EntityController::class, 'page'])->name('entities.page');
+
+    // JSON endpoints (para Axios) - sessão web
+    Route::prefix('entities')->group(function () {
+        Route::get('/list', [EntityController::class, 'index'])->name('entities.list');
+        Route::post('/', [EntityController::class, 'store'])->name('entities.store');
+
+        Route::get('{entity}', [EntityController::class, 'show'])->name('entities.show');
+        Route::put('{entity}', [EntityController::class, 'update'])->name('entities.update');
+        Route::delete('{entity}', [EntityController::class, 'destroy'])->name('entities.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';
