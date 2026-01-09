@@ -97,7 +97,7 @@ const emit = defineEmits(["update:filterStatus", "update:search"]);
             :value="search"
             @input="emit('update:search', $event.target.value)"
             type="text"
-            placeholder="Pesquisar por nome ou NIF…"
+            placeholder="Pesquisar…"
             class="w-full max-w-md px-4 py-2 border rounded focus:ring focus:ring-blue-200"
         />
     </div>

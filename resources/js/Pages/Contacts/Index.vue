@@ -348,6 +348,7 @@ onMounted(loadContacts);
                                 : "ativar"
                         }}
                     </strong>
+
                     o contacto
                     <strong>{{ contactToToggle?.name }}</strong
                     >?

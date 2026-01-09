@@ -13,15 +13,15 @@ class Contact extends Model
         'first_name',
         'last_name',
         'email',
+        'email_hash',
         'phone',
+        'phone_hash',
         'role',
         'gdpr_consent',
         'status',
     ];
 
     protected $casts = [
-        'email' => 'encrypted',
-        'phone' => 'encrypted',
         'gdpr_consent' => 'boolean',
     ];
 
