@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EntityController;
+use App\Http\Controllers\ContactController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -45,6 +46,20 @@ Route::middleware('auth')->group(function () {
         [EntityController::class, 'toggleStatus']
     )->name('entities.toggleStatus');
 
+    Route::get('/entities/{entity}/contacts', [ContactController::class, 'page'])
+        ->name('entities.contacts.page');
+
+    Route::get('/entities/{entity}/contacts/list', [ContactController::class, 'index'])
+        ->name('entities.contacts.list');
+
+    Route::post('/entities/{entity}/contacts', [ContactController::class, 'store'])
+        ->name('entities.contacts.store');
+
+    Route::put('/contacts/{contact}', [ContactController::class, 'update'])
+        ->name('contacts.update');
+
+    Route::patch('/contacts/{contact}/toggle-status', [ContactController::class, 'toggleStatus'])
+        ->name('contacts.toggleStatus');
 });
 
 require __DIR__.'/auth.php';

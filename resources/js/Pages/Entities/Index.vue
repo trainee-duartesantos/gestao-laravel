@@ -250,6 +250,7 @@ const confirmToggle = (entity) => {
 const toggleStatusConfirmed = async () => {
     await axios.patch(`/entities/${entityToToggle.value.id}/toggle-status`);
 
+    pagesCache.value = {};
     showConfirm.value = false;
     entityToToggle.value = null;
     await loadEntities();
