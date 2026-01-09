@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EntityController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CountryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
 
     // Página Inertia (UI)
     Route::get('/entities', [EntityController::class, 'page'])->name('entities.page');
+
 
     // JSON endpoints (para Axios) - sessão web
     Route::prefix('entities')->group(function () {
@@ -63,6 +65,25 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])
     ->name('contacts.destroy');
+
+    //Countries
+    Route::get('/settings/countries', [CountryController::class, 'page'])
+    ->name('settings.countries.page');
+
+    // JSON
+    Route::prefix('settings/countries')->group(function () {
+        Route::get('/list', [CountryController::class, 'index'])
+            ->name('settings.countries.list');
+
+        Route::post('/', [CountryController::class, 'store'])
+            ->name('settings.countries.store');
+
+        Route::put('/{country}', [CountryController::class, 'update'])
+            ->name('settings.countries.update');
+
+        Route::delete('/{country}', [CountryController::class, 'destroy'])
+            ->name('settings.countries.destroy');
+    });
 
 });
 
