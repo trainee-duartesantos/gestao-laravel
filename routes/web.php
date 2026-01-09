@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EntityController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CountryController;
+use App\Http\Controllers\ContactRoleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -88,8 +89,22 @@ Route::middleware('auth')->group(function () {
 
         Route::delete('/countries/{country}', [CountryController::class, 'destroy'])
             ->name('settings.countries.destroy');
-    });
 
+        Route::get('/contact-roles', [ContactRoleController::class, 'page'])
+            ->name('settings.contact-roles.page');
+
+        Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])
+            ->name('settings.contact-roles.list');
+
+        Route::post('/contact-roles', [ContactRoleController::class, 'store'])
+            ->name('settings.contact-roles.store');
+
+        Route::put('/contact-roles/{contactRole}', [ContactRoleController::class, 'update'])
+            ->name('settings.contact-roles.update');
+
+        Route::delete('/contact-roles/{contactRole}', [ContactRoleController::class, 'destroy'])
+            ->name('settings.contact-roles.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';
