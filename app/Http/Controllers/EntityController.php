@@ -124,5 +124,16 @@ class EntityController extends Controller
             'status' => $entity->status,
         ]);
     }
+    
+    public function destroy(Entity $entity)
+    {
+        if ($entity->contacts()->exists()) {
+            return response()->json([
+                'message' => 'Não é possível eliminar entidades com contactos associados.'
+            ], 422);
+        }
 
+        $entity->delete();
+        return response()->noContent();
+    }
 }

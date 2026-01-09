@@ -230,7 +230,7 @@ onMounted(loadContacts);
             <div class="flex gap-2">
                 <Link
                     :href="route('entities.page')"
-                    class="px-4 py-2 border rounded text-sm"
+                    class="bg-gray-500 text-white px-4 py-2 border rounded"
                 >
                     ← Entidades
                 </Link>

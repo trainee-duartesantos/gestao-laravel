@@ -242,6 +242,26 @@ const toggleStatus = async (entity) => {
 const showConfirm = ref(false);
 const entityToToggle = ref(null);
 
+const showDeleteConfirm = ref(false);
+const entityToDelete = ref(null);
+
+const confirmDelete = (entity) => {
+    entityToDelete.value = entity;
+    showDeleteConfirm.value = true;
+};
+
+const deleteConfirmed = async () => {
+    if (!entityToDelete.value) return;
+
+    await axios.delete(`/entities/${entityToDelete.value.id}`);
+
+    pagesCache.value = {};
+    showDeleteConfirm.value = false;
+    entityToDelete.value = null;
+
+    await loadEntities(currentPage.value);
+};
+
 const confirmToggle = (entity) => {
     entityToToggle.value = entity;
     showConfirm.value = true;
@@ -422,6 +442,13 @@ onMounted(loadEntities);
                         >
                             {{ e.status === "active" ? "Desativar" : "Ativar" }}
                         </button>
+
+                        <button
+                            class="text-sm text-red-700 hover:underline"
+                            @click="confirmDelete(e)"
+                        >
+                            Eliminar
+                        </button>
                     </td>
                 </tr>
                 <tr
@@ -482,6 +509,44 @@ onMounted(loadEntities);
                         @click="toggleStatusConfirmed"
                     >
                         Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal confirmação eliminar -->
+        <div
+            v-if="showDeleteConfirm"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+            <div class="bg-white rounded shadow-lg p-6 w-full max-w-md">
+                <h2 class="text-lg font-semibold mb-3 text-red-600">
+                    Eliminar entidade
+                </h2>
+
+                <p class="mb-6">
+                    Tens a certeza que pretendes eliminar a entidade
+                    <strong>{{ entityToDelete?.name }}</strong
+                    >?
+                    <br />
+                    <span class="text-sm text-gray-500">
+                        Esta ação não pode ser desfeita.
+                    </span>
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        class="px-4 py-2 border rounded"
+                        @click="showDeleteConfirm = false"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        class="px-4 py-2 bg-red-600 text-white rounded"
+                        @click="deleteConfirmed"
+                    >
+                        Eliminar
                     </button>
                 </div>
             </div>
