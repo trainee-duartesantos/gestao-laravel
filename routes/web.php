@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/contacts/{contact}/toggle-status', [ContactController::class, 'toggleStatus'])
         ->name('contacts.toggleStatus');
+
+    Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])
+    ->name('contacts.destroy');
+
 });
 
 require __DIR__.'/auth.php';

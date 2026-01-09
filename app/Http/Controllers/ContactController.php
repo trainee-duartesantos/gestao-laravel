@@ -93,4 +93,11 @@ class ContactController extends Controller
 
         return response()->json(['success' => true]);
     }
+    public function destroy(Contact $contact)
+    {
+        $contact->delete();
+
+        return response()->noContent();
+    }
+
 }

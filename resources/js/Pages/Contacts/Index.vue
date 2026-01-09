@@ -48,6 +48,26 @@ const form = ref({
 const showConfirm = ref(false);
 const contactToToggle = ref(null);
 
+const showDeleteConfirm = ref(false);
+const contactToDelete = ref(null);
+
+const confirmDelete = (contact) => {
+    contactToDelete.value = contact;
+    showDeleteConfirm.value = true;
+};
+
+const deleteConfirmed = async () => {
+    if (!contactToDelete.value) return;
+
+    await axios.delete(`/contacts/${contactToDelete.value.id}`);
+
+    pagesCache.value = {};
+    showDeleteConfirm.value = false;
+    contactToDelete.value = null;
+
+    await loadContacts(currentPage.value);
+};
+
 // helpers
 const makeCacheKey = (page) =>
     `page=${page}|perPage=${perPage.value}|status=${status.value}|search=${search.value}`;
@@ -317,6 +337,13 @@ onMounted(loadContacts);
                                         : "Ativar"
                                 }}
                             </button>
+
+                            <button
+                                class="text-sm text-red-700 hover:underline"
+                                @click="confirmDelete(c)"
+                            >
+                                Eliminar
+                            </button>
                         </td>
                     </tr>
 
@@ -374,6 +401,44 @@ onMounted(loadContacts);
                         @click="toggleStatusConfirmed"
                     >
                         Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal confirmação eliminar -->
+        <div
+            v-if="showDeleteConfirm"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+            <div class="bg-white rounded shadow-lg p-6 w-full max-w-md">
+                <h2 class="text-lg font-semibold mb-3 text-red-600">
+                    Eliminar contacto
+                </h2>
+
+                <p class="mb-6">
+                    Tens a certeza que pretendes eliminar o contacto
+                    <strong>{{ contactToDelete?.name }}</strong
+                    >?
+                    <br />
+                    <span class="text-sm text-gray-500">
+                        Esta ação não pode ser desfeita.
+                    </span>
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        class="px-4 py-2 border rounded"
+                        @click="showDeleteConfirm = false"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        class="px-4 py-2 bg-red-600 text-white rounded"
+                        @click="deleteConfirmed"
+                    >
+                        Eliminar
                     </button>
                 </div>
             </div>
