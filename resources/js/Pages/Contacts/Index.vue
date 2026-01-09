@@ -301,6 +301,13 @@ onMounted(loadContacts);
                         </td>
                         <td class="px-3 py-2 text-center space-x-2">
                             <button
+                                class="text-sm text-blue-600 hover:underline"
+                                @click="openEditModal(c)"
+                            >
+                                Editar
+                            </button>
+
+                            <button
                                 class="text-sm text-red-600 hover:underline"
                                 @click="confirmToggle(c)"
                             >

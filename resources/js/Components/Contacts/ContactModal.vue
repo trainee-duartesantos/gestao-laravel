@@ -48,8 +48,8 @@ const updateField = (field, value) => {
         <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
             <!-- Header -->
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold">
-                    {{ isEdit ? "Editar Contacto" : "Novo Contacto" }}
+                <h2 class="text-lg font-semibold mb-4">
+                    {{ mode === "edit" ? "Editar contacto" : "Novo contacto" }}
                 </h2>
 
                 <button
@@ -131,18 +131,21 @@ const updateField = (field, value) => {
             <div class="flex justify-end gap-3 mt-6">
                 <button
                     class="px-4 py-2 border rounded"
-                    @click="close"
-                    :disabled="saving"
+                    @click="$emit('update:show', false)"
                 >
                     Cancelar
                 </button>
 
                 <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+                    class="px-4 py-2 bg-blue-600 text-white rounded"
                     :disabled="saving"
-                    @click="emit('save')"
+                    @click="$emit('save')"
                 >
-                    {{ saving ? "A guardar…" : "Guardar" }}
+                    {{
+                        mode === "edit"
+                            ? "Guardar alterações"
+                            : "Criar contacto"
+                    }}
                 </button>
             </div>
         </div>
