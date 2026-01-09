@@ -14,7 +14,7 @@ class CountryController extends Controller
         return Inertia::render('Settings/Countries/Index');
     }
 
-    // Listagem (JSON)
+    // Listagem
     public function index(Request $request)
     {
         $search = $request->string('search')->trim();
@@ -29,13 +29,7 @@ class CountryController extends Controller
             });
         }
 
-        return $query
-            ->paginate($perPage)
-            ->through(fn ($c) => [
-                'id'   => $c->id,
-                'code' => $c->code,
-                'name' => $c->name,
-            ]);
+        return $query->paginate($perPage);
     }
 
     // Criar

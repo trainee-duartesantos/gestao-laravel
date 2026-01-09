@@ -71,17 +71,22 @@ Route::middleware('auth')->group(function () {
     ->name('settings.countries.page');
 
     // JSON
-    Route::prefix('settings/countries')->group(function () {
-        Route::get('/list', [CountryController::class, 'index'])
+
+    Route::prefix('settings')->group(function () {
+
+        Route::get('/countries', [CountryController::class, 'page'])
+            ->name('settings.countries.page');
+
+        Route::get('/countries/list', [CountryController::class, 'index'])
             ->name('settings.countries.list');
 
-        Route::post('/', [CountryController::class, 'store'])
+        Route::post('/countries', [CountryController::class, 'store'])
             ->name('settings.countries.store');
 
-        Route::put('/{country}', [CountryController::class, 'update'])
+        Route::put('/countries/{country}', [CountryController::class, 'update'])
             ->name('settings.countries.update');
 
-        Route::delete('/{country}', [CountryController::class, 'destroy'])
+        Route::delete('/countries/{country}', [CountryController::class, 'destroy'])
             ->name('settings.countries.destroy');
     });
 

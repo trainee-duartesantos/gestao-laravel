@@ -11,13 +11,7 @@ const props = defineProps({
 
 const emit = defineEmits(["update:show", "update:modelValue", "save"]);
 
-const title = computed(() =>
-    props.mode === "edit" ? "Editar país" : "Novo país"
-);
-
-const close = () => {
-    emit("update:show", false);
-};
+const isEdit = computed(() => props.mode === "edit");
 
 const updateField = (field, value) => {
     emit("update:modelValue", {
@@ -32,22 +26,12 @@ const updateField = (field, value) => {
         v-if="show"
         class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
     >
-        <div class="bg-white w-full max-w-md rounded-lg shadow-lg p-6">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold">{{ title }}</h2>
+        <div class="bg-white w-full max-w-md rounded shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">
+                {{ isEdit ? "Editar país" : "Novo país" }}
+            </h2>
 
-                <button
-                    @click="close"
-                    class="text-gray-400 hover:text-gray-600"
-                >
-                    ✕
-                </button>
-            </div>
-
-            <!-- Form -->
             <div class="space-y-4">
-                <!-- Código -->
                 <div>
                     <label class="block text-sm font-medium mb-1">
                         Código (2 letras)
@@ -56,20 +40,14 @@ const updateField = (field, value) => {
                         type="text"
                         maxlength="2"
                         :value="modelValue.code"
-                        @input="
-                            updateField(
-                                'code',
-                                $event.target.value.toUpperCase()
-                            )
-                        "
-                        class="w-full border rounded px-3 py-2"
+                        @input="updateField('code', $event.target.value)"
+                        class="w-full border rounded px-3 py-2 uppercase"
                     />
                     <p v-if="errors?.code" class="text-sm text-red-600">
                         {{ errors.code[0] }}
                     </p>
                 </div>
 
-                <!-- Nome -->
                 <div>
                     <label class="block text-sm font-medium mb-1"> Nome </label>
                     <input
@@ -84,9 +62,11 @@ const updateField = (field, value) => {
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="flex justify-end gap-3 mt-6">
-                <button class="px-4 py-2 border rounded" @click="close">
+                <button
+                    class="px-4 py-2 border rounded"
+                    @click="$emit('update:show', false)"
+                >
                     Cancelar
                 </button>
 
@@ -95,7 +75,7 @@ const updateField = (field, value) => {
                     :disabled="saving"
                     @click="$emit('save')"
                 >
-                    {{ saving ? "A guardar..." : "Guardar" }}
+                    {{ isEdit ? "Guardar alterações" : "Criar país" }}
                 </button>
             </div>
         </div>
