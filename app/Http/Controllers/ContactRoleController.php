@@ -61,6 +61,12 @@ class ContactRoleController extends Controller
     // Eliminar
     public function destroy(ContactRole $contactRole)
     {
+        if ($contactRole->contacts()->exists()) {
+            return response()->json([
+                'message' => 'Não é possível eliminar esta função porque está associada a contactos.'
+            ], 422);
+        }
+
         $contactRole->delete();
 
         return response()->noContent();

@@ -82,10 +82,16 @@ const saveRole = async () => {
 };
 
 const deleteRole = async (role) => {
-    if (!confirm(`Eliminar a função "${role.name}"?`)) return;
-
-    await axios.delete(`/settings/contact-roles/${role.id}`);
-    await loadRoles(currentPage.value);
+    try {
+        await axios.delete(`/settings/contact-roles/${role.id}`);
+        loadRoles();
+    } catch (e) {
+        if (e.response?.status === 422) {
+            alert(e.response.data.message);
+        } else {
+            alert("Erro ao eliminar função");
+        }
+    }
 };
 
 onMounted(loadRoles);
