@@ -36,6 +36,7 @@ const loadRoles = async (page = 1) => {
     currentPage.value = res.data.current_page;
     lastPage.value = res.data.last_page;
     total.value = res.data.total;
+
     loading.value = false;
 };
 
@@ -49,10 +50,10 @@ const openCreate = () => {
     showModal.value = true;
 };
 
-const openEdit = (r) => {
+const openEdit = (role) => {
     mode.value = "edit";
-    editingId.value = r.id;
-    form.value = { name: r.name };
+    editingId.value = role.id;
+    form.value = { name: role.name };
     errors.value = {};
     showModal.value = true;
 };
@@ -82,16 +83,12 @@ const saveRole = async () => {
 };
 
 const deleteRole = async (role) => {
-    try {
-        await axios.delete(`/settings/contact-roles/${role.id}`);
-        loadRoles();
-    } catch (e) {
-        if (e.response?.status === 422) {
-            alert(e.response.data.message);
-        } else {
-            alert("Erro ao eliminar função");
-        }
-    }
+    if (role.contacts_count > 0) return;
+
+    if (!confirm("Eliminar esta função?")) return;
+
+    await axios.delete(`/settings/contact-roles/${role.id}`);
+    loadRoles(currentPage.value);
 };
 
 onMounted(loadRoles);
@@ -99,6 +96,7 @@ onMounted(loadRoles);
 
 <template>
     <div class="p-6">
+        <!-- Header -->
         <div class="flex justify-between mb-6">
             <h1 class="text-2xl font-bold">Funções de Contacto</h1>
 
@@ -110,6 +108,7 @@ onMounted(loadRoles);
             </button>
         </div>
 
+        <!-- Filtros -->
         <div class="flex justify-between mb-3">
             <input
                 v-model="search"
@@ -120,6 +119,7 @@ onMounted(loadRoles);
             <EntitiesPerPage v-model="perPage" />
         </div>
 
+        <!-- Tabela -->
         <table class="min-w-full border border-gray-200">
             <thead class="bg-gray-100">
                 <tr>
@@ -127,28 +127,65 @@ onMounted(loadRoles);
                     <th class="px-3 py-2 text-center">Ações</th>
                 </tr>
             </thead>
+
             <tbody>
-                <tr v-for="r in roles" :key="r.id" class="border-t">
-                    <td class="px-3 py-2">{{ r.name }}</td>
+                <tr
+                    v-for="role in roles"
+                    :key="role.id"
+                    class="border-t hover:bg-gray-50"
+                >
+                    <!-- Nome + badge -->
+                    <td class="px-3 py-2">
+                        <div class="flex items-center gap-2">
+                            <span>{{ role.name }}</span>
+
+                            <span
+                                v-if="role.contacts_count > 0"
+                                class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700"
+                            >
+                                {{ role.contacts_count }}
+                            </span>
+                        </div>
+                    </td>
+
+                    <!-- Ações -->
                     <td class="px-3 py-2 text-center space-x-3">
                         <button
                             class="text-blue-600 hover:underline"
-                            @click="openEdit(r)"
+                            @click="openEdit(role)"
                         >
                             Editar
                         </button>
 
                         <button
-                            class="text-red-600 hover:underline"
-                            @click="deleteRole(r)"
+                            @click="deleteRole(role)"
+                            :disabled="role.contacts_count > 0"
+                            :title="
+                                role.contacts_count > 0
+                                    ? 'Não é possível eliminar funções associadas a contactos'
+                                    : 'Eliminar função'
+                            "
+                            class="text-sm"
+                            :class="
+                                role.contacts_count > 0
+                                    ? 'text-gray-400 cursor-not-allowed'
+                                    : 'text-red-600 hover:underline'
+                            "
                         >
                             Eliminar
                         </button>
                     </td>
                 </tr>
+
+                <tr v-if="!loading && roles.length === 0">
+                    <td colspan="2" class="text-center py-6 text-gray-500">
+                        Nenhuma função encontrada
+                    </td>
+                </tr>
             </tbody>
         </table>
 
+        <!-- Paginação -->
         <EntitiesPagination
             :current-page="currentPage"
             :last-page="lastPage"
@@ -156,6 +193,7 @@ onMounted(loadRoles);
             @change="loadRoles"
         />
 
+        <!-- Modal -->
         <ContactRoleModal
             :show="showModal"
             :mode="mode"

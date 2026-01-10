@@ -19,22 +19,30 @@ class ContactController extends Controller
     public function index(Entity $entity, Request $request)
     {
         return $entity->contacts()
-            ->with('contactRole') // 🔥 IMPORTANTE
-            ->when($request->status === 'active', fn ($q) => $q->where('status', 'active'))
-            ->when($request->status === 'inactive', fn ($q) => $q->where('status', 'inactive'))
-            ->when($request->search, function ($q) use ($request) {
-                $q->where(function ($qq) use ($request) {
-                    $qq->where('first_name', 'like', "%{$request->search}%")
-                    ->orWhere('last_name', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%");
+            ->when(
+                in_array($request->status, ['active', 'inactive'], true),
+                fn ($q) => $q->where('status', $request->status)
+            )
+            ->when(
+                $request->filled('contact_role_id') && is_numeric($request->contact_role_id),
+                fn ($q) => $q->where('contact_role_id', (int) $request->contact_role_id)
+            )
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = trim((string) $request->search);
+
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('first_name', 'like', "%{$search}%")
+                       ->orWhere('last_name', 'like', "%{$search}%");
                 });
             })
+            // ⬇️ IMPORTANTE: usar a relação contactRole (NUNCA "role")
+            ->with('contactRole')
             ->orderBy('first_name')
             ->paginate($request->integer('per_page', 10))
             ->through(fn ($c) => [
                 'id' => $c->id,
-                'name' => trim($c->first_name . ' ' . $c->last_name),
-                'role' => $c->contactRole?->name,
+                'name' => trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? '')),
+                'role' => $c->contactRole?->name, // ⬅️ aqui!
                 'email' => $c->email,
                 'phone' => $c->phone,
                 'status' => $c->status,

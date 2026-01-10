@@ -10,7 +10,6 @@ class ContactRole extends Model
 
     public function contacts()
     {
-        return $this->hasMany(Contact::class);
+        return $this->hasMany(Contact::class, 'contact_role_id');
     }
-
 }

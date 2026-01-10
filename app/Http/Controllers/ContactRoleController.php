@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContactRole;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Entity;
 
 class ContactRoleController extends Controller
 {
@@ -17,10 +18,12 @@ class ContactRoleController extends Controller
     // Listagem
     public function index(Request $request)
     {
-        $search = $request->string('search')->trim();
+        $search  = $request->string('search')->trim();
         $perPage = $request->integer('per_page', 10);
 
-        $query = ContactRole::query()->orderBy('name');
+        $query = ContactRole::query()
+            ->withCount('contacts')
+            ->orderBy('name');
 
         if ($search->isNotEmpty()) {
             $query->where('name', 'like', "%{$search}%");

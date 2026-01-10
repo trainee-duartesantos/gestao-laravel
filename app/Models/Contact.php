@@ -29,9 +29,10 @@ class Contact extends Model
         return $this->belongsTo(Entity::class);
     }
 
+    // ✅ relação oficial (evita colisões com coluna "role")
     public function contactRole()
     {
-        return $this->belongsTo(ContactRole::class);
+        return $this->belongsTo(ContactRole::class, 'contact_role_id');
     }
 
     public function setEmailAttribute($value): void

@@ -37,6 +37,7 @@ const saving = ref(false);
 const errors = ref({});
 const mode = ref("create");
 const editingId = ref(null);
+const roleFilter = ref("");
 
 const form = ref({
     name: "",
@@ -75,17 +76,6 @@ const makeCacheKey = (page) =>
 
 // carregar contactos
 const loadContacts = async (page = 1) => {
-    const cacheKey = makeCacheKey(page);
-
-    if (pagesCache.value[cacheKey]) {
-        const cached = pagesCache.value[cacheKey];
-        contacts.value = cached.data;
-        currentPage.value = cached.currentPage;
-        lastPage.value = cached.lastPage;
-        total.value = cached.total;
-        return;
-    }
-
     loading.value = true;
     error.value = null;
 
@@ -96,8 +86,14 @@ const loadContacts = async (page = 1) => {
                 params: {
                     page,
                     per_page: perPage.value,
-                    status: status.value,
-                    search: search.value,
+                    status: status.value === "all" ? undefined : status.value,
+                    search: search.value?.trim()
+                        ? search.value.trim()
+                        : undefined,
+                    contact_role_id:
+                        roleFilter.value !== ""
+                            ? Number(roleFilter.value)
+                            : undefined,
                 },
             }
         );
@@ -106,18 +102,10 @@ const loadContacts = async (page = 1) => {
         currentPage.value = response.data.current_page;
         lastPage.value = response.data.last_page;
         total.value = response.data.total;
-
-        pagesCache.value[cacheKey] = {
-            data: response.data.data,
-            currentPage: response.data.current_page,
-            lastPage: response.data.last_page,
-            total: response.data.total,
-        };
     } catch (e) {
         error.value = "Erro ao carregar contactos";
     } finally {
         loading.value = false;
-        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 };
 
@@ -130,7 +118,7 @@ watch(search, () => {
     }, 300);
 });
 
-watch([status, perPage], () => {
+watch([status, perPage, roleFilter], () => {
     pagesCache.value = {};
     loadContacts(1);
 });
@@ -258,21 +246,35 @@ onMounted(() => {
             </div>
         </div>
 
-        <EntitiesFilters
-            :filter-status="status"
-            :search="search"
-            :counts="{
-                total: totalCount,
-                active: activeCount,
-                inactive: inactiveCount,
-            }"
-            @update:filterStatus="status = $event"
-            @update:search="search = $event"
-        />
+        <div class="flex justify-between items-center mb-4 gap-4">
+            <!-- Pesquisa + Função -->
+            <div class="flex items-center gap-3">
+                <!-- Pesquisa (do EntitiesFilters) -->
+                <EntitiesFilters
+                    :filter-status="status"
+                    :search="search"
+                    :counts="{
+                        total: totalCount,
+                        active: activeCount,
+                        inactive: inactiveCount,
+                    }"
+                    @update:filterStatus="status = $event"
+                    @update:search="search = $event"
+                />
 
-        <!-- Per page + total -->
-        <div class="flex justify-between items-center mb-3">
-            <EntitiesPerPage v-model="perPage" />
+                <!-- Filtro por função -->
+                <select
+                    v-model="roleFilter"
+                    class="border rounded px-3 py-2 text-sm min-w-[200px]"
+                >
+                    <option value="">Todas as funções</option>
+
+                    <option v-for="r in roles" :key="r.id" :value="r.id">
+                        {{ r.name }}
+                    </option>
+                </select>
+            </div>
+
             <span class="text-sm text-gray-500"> {{ total }} registos </span>
         </div>
 
