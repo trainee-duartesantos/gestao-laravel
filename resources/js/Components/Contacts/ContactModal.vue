@@ -22,6 +22,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    roles: {
+        type: Array,
+        required: true,
+    },
 });
 
 const emit = defineEmits(["update:show", "update:modelValue", "save"]);
@@ -83,14 +87,29 @@ const updateField = (field, value) => {
                     <label class="block text-sm font-medium mb-1">
                         Função
                     </label>
-                    <input
-                        type="text"
-                        :value="modelValue.role"
-                        @input="updateField('role', $event.target.value)"
+
+                    <select
+                        :value="modelValue.contact_role_id"
+                        @change="
+                            updateField(
+                                'contact_role_id',
+                                $event.target.value || null
+                            )
+                        "
                         class="w-full border rounded px-3 py-2"
-                    />
-                    <p v-if="errors.role" class="text-sm text-red-600">
-                        {{ errors.role[0] }}
+                    >
+                        <option value="">— Sem função —</option>
+
+                        <option v-for="r in roles" :key="r.id" :value="r.id">
+                            {{ r.name }}
+                        </option>
+                    </select>
+
+                    <p
+                        v-if="errors?.contact_role_id"
+                        class="text-sm text-red-600"
+                    >
+                        {{ errors.contact_role_id[0] }}
                     </p>
                 </div>
 

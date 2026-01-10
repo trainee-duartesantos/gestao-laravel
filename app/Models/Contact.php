@@ -16,9 +16,8 @@ class Contact extends Model
         'email_hash',
         'phone',
         'phone_hash',
-        'role',
-        'gdpr_consent',
         'status',
+        'contact_role_id',
     ];
 
     protected $casts = [
@@ -28,6 +27,11 @@ class Contact extends Model
     public function entity()
     {
         return $this->belongsTo(Entity::class);
+    }
+
+    public function contactRole()
+    {
+        return $this->belongsTo(ContactRole::class);
     }
 
     public function setEmailAttribute($value): void

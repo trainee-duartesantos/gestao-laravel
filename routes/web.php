@@ -24,30 +24,39 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
 
-    // Profile
+    // ================= PROFILE =================
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ===== ENTITIES =====
+    // ================= ENTITIES =================
 
-    // Página Inertia (UI)
-    Route::get('/entities', [EntityController::class, 'page'])->name('entities.page');
+    // Página Inertia
+    Route::get('/entities', [EntityController::class, 'page'])
+        ->name('entities.page');
 
-
-    // JSON endpoints (para Axios) - sessão web
+    // JSON (Axios)
     Route::prefix('entities')->group(function () {
-        Route::get('/list', [EntityController::class, 'index'])->name('entities.list');
-        Route::post('/', [EntityController::class, 'store'])->name('entities.store');
+        Route::get('/list', [EntityController::class, 'index'])
+            ->name('entities.list');
 
-        Route::get('{entity}', [EntityController::class, 'show'])->name('entities.show');
-        Route::put('{entity}', [EntityController::class, 'update'])->name('entities.update');
-        Route::delete('{entity}', [EntityController::class, 'destroy'])->name('entities.destroy');
+        Route::post('/', [EntityController::class, 'store'])
+            ->name('entities.store');
+
+        Route::get('{entity}', [EntityController::class, 'show'])
+            ->name('entities.show');
+
+        Route::put('{entity}', [EntityController::class, 'update'])
+            ->name('entities.update');
+
+        Route::delete('{entity}', [EntityController::class, 'destroy'])
+            ->name('entities.destroy');
     });
-    Route::patch(
-        '/entities/{entity}/toggle-status',
-        [EntityController::class, 'toggleStatus']
-    )->name('entities.toggleStatus');
+
+    Route::patch('/entities/{entity}/toggle-status', [EntityController::class, 'toggleStatus'])
+        ->name('entities.toggleStatus');
+
+    // ================= CONTACTS =================
 
     Route::get('/entities/{entity}/contacts', [ContactController::class, 'page'])
         ->name('entities.contacts.page');
@@ -65,16 +74,13 @@ Route::middleware('auth')->group(function () {
         ->name('contacts.toggleStatus');
 
     Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])
-    ->name('contacts.destroy');
+        ->name('contacts.destroy');
 
-    //Countries
-    Route::get('/settings/countries', [CountryController::class, 'page'])
-    ->name('settings.countries.page');
-
-    // JSON
+    // ================= SETTINGS =================
 
     Route::prefix('settings')->group(function () {
 
+        // -------- Countries --------
         Route::get('/countries', [CountryController::class, 'page'])
             ->name('settings.countries.page');
 
@@ -90,6 +96,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/countries/{country}', [CountryController::class, 'destroy'])
             ->name('settings.countries.destroy');
 
+        // -------- Contact Roles --------
         Route::get('/contact-roles', [ContactRoleController::class, 'page'])
             ->name('settings.contact-roles.page');
 
@@ -107,4 +114,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

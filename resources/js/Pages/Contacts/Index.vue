@@ -43,6 +43,7 @@ const form = ref({
     role: "",
     email: "",
     phone: "",
+    contact_role_id: null,
 });
 
 const showConfirm = ref(false);
@@ -144,6 +145,16 @@ const inactiveCount = computed(
     () => contacts.value.filter((c) => c.status === "inactive").length
 );
 
+const roles = ref([]);
+
+const loadRoles = async () => {
+    const res = await axios.get("/settings/contact-roles/list", {
+        params: { per_page: 100 },
+    });
+
+    roles.value = res.data.data;
+};
+
 // toggle status
 const confirmToggle = (contact) => {
     contactToToggle.value = contact;
@@ -181,9 +192,9 @@ const openEditModal = (contact) => {
     errors.value = {};
     form.value = {
         name: contact.name,
-        role: contact.role,
         email: contact.email,
         phone: contact.phone,
+        contact_role_id: contact.contact_role_id,
     };
     showModal.value = true;
 };
@@ -213,7 +224,10 @@ const saveContact = async () => {
     }
 };
 
-onMounted(loadContacts);
+onMounted(() => {
+    loadContacts();
+    loadRoles();
+});
 </script>
 
 <template>
@@ -449,6 +463,7 @@ onMounted(loadContacts);
             :show="showModal"
             :mode="mode"
             v-model="form"
+            :roles="roles"
             :errors="errors"
             :saving="saving"
             @update:show="showModal = $event"
