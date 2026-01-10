@@ -15,6 +15,7 @@ const showModal = ref(false);
 const saving = ref(false);
 const errors = ref({});
 const filterStatus = ref("all");
+const filterType = ref("");
 const search = ref("");
 const currentPage = ref(1);
 const lastPage = ref(1);
@@ -41,7 +42,7 @@ const form = ref({
 });
 
 const makeCacheKey = (page) => {
-    return `page=${page}|perPage=${perPage.value}|status=${filterStatus.value}|search=${search.value}`;
+    return `page=${page}|perPage=${perPage.value}|status=${filterStatus.value}|type=${filterType.value}|search=${search.value}`;
 };
 
 const params = new URLSearchParams(window.location.search);
@@ -100,6 +101,7 @@ const loadEntities = async (page = 1) => {
                 page,
                 per_page: perPage.value,
                 status: filterStatus.value,
+                type: filterType.value,
                 search: search.value,
             },
         });
@@ -145,6 +147,11 @@ watch(filterStatus, () => {
 });
 
 watch(perPage, () => {
+    pagesCache.value = {};
+    loadEntities(1);
+});
+
+watch(filterType, () => {
     pagesCache.value = {};
     loadEntities(1);
 });
@@ -333,6 +340,13 @@ onMounted(loadEntities);
             @update:filterStatus="filterStatus = $event"
             @update:search="search = $event"
         />
+
+        <select v-model="filterType" class="border rounded px-3 py-2 ml-4">
+            <option value="">Todos os tipos</option>
+            <option value="client">Clientes</option>
+            <option value="supplier">Fornecedores</option>
+            <option value="both">Ambos</option>
+        </select>
 
         <div class="flex justify-between items-center mb-3">
             <EntitiesPerPage v-model="perPage" />

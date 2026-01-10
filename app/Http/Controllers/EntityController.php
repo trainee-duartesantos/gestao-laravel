@@ -22,6 +22,7 @@ class EntityController extends Controller
     {
         $search = $request->string('search')->trim();
         $status = $request->string('status');
+        $type = $request->string('type')->toString();
         $perPage = $request->integer('per_page', 10);
 
         $query = Entity::query()
@@ -40,6 +41,14 @@ class EntityController extends Controller
             $query->where('status', $status);
         }
 
+        if (in_array($type, ['client', 'supplier', 'both'], true)) {
+            match ($type) {
+                'client' => $query->whereIn('type', ['client', 'both']),
+                'supplier' => $query->whereIn('type', ['supplier', 'both']),
+                'both' => $query->where('type', 'both'),
+            };
+        }
+
         return $query
             ->paginate($perPage)
             ->through(fn ($e) => [
@@ -48,8 +57,7 @@ class EntityController extends Controller
                 'name' => $e->name,
                 'nif_normalized' => $e->nif_normalized,
                 'status' => $e->status,
-                'is_customer' => $e->is_customer,
-                'is_supplier' => $e->is_supplier,
+                'type' => $e->type,
             ]);
     }
 
@@ -65,8 +73,7 @@ class EntityController extends Controller
                 Rule::unique('entities', 'nif_normalized'),
             ],
             'email' => ['nullable', 'email'],
-            'is_customer' => ['boolean'],
-            'is_supplier' => ['boolean'],
+            'type' => ['required', Rule::in(['client', 'supplier', 'both'])],
         ]);
 
         $entity = DB::transaction(function () use ($validated) {
@@ -77,8 +84,7 @@ class EntityController extends Controller
                 'name' => $validated['name'],
                 'nif_normalized' => $validated['nif'],
                 'email' => $validated['email'] ?? null,
-                'is_customer' => $validated['is_customer'] ?? false,
-                'is_supplier' => $validated['is_supplier'] ?? false,
+                'type' => $validated['type'],
                 'status' => 'active',
             ]);
         });
@@ -99,16 +105,14 @@ class EntityController extends Controller
                 Rule::unique('entities', 'nif_normalized')->ignore($entity->id),
             ],
             'email' => ['nullable', 'email'],
-            'is_customer' => ['boolean'],
-            'is_supplier' => ['boolean'],
+            'type' => ['required', Rule::in(['client', 'supplier', 'both'])],
         ]);
 
         $entity->update([
             'name' => $validated['name'],
             'nif_normalized' => $validated['nif'],
             'email' => $validated['email'] ?? null,
-            'is_customer' => $validated['is_customer'] ?? false,
-            'is_supplier' => $validated['is_supplier'] ?? false,
+            'type' => $validated['type'],
         ]);
 
         return response()->json(['success' => true]);

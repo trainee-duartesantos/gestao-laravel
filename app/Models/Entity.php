@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Support\Hashing;
 use App\Support\Normalize;
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\EntityType;
+use Illuminate\Database\Eloquent\Builder;
 
 class Entity extends Model
 {
@@ -39,6 +41,7 @@ class Entity extends Model
         'gdpr_consent' => 'boolean',
         'is_customer'  => 'boolean',
         'is_supplier'  => 'boolean',
+        'type' => EntityType::class,
     ];
 
     // Relações
@@ -77,5 +80,37 @@ class Entity extends Model
         $normalized = Normalize::digits($value);
         $this->attributes['mobile'] = $normalized;
         $this->attributes['mobile_hash'] = Hashing::sha256($normalized);
+    }
+
+    public function scopeClients(Builder $q): Builder
+    {
+        return $q->whereIn('type', [EntityType::CLIENT, EntityType::BOTH]);
+    }
+
+    public function scopeSuppliers(Builder $q): Builder
+    {
+        return $q->whereIn('type', [EntityType::SUPPLIER, EntityType::BOTH]);
+    }
+
+    public function scopeType(Builder $q, ?string $type): Builder
+    {
+        if (!$type) return $q;
+
+        return match ($type) {
+            'client' => $q->clients(),
+            'supplier' => $q->suppliers(),
+            'both' => $q->where('type', EntityType::BOTH),
+            default => $q,
+        };
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function ($entity) {
+            if ($entity->type instanceof EntityType) {
+                $entity->is_customer = in_array($entity->type, [EntityType::CLIENT, EntityType::BOTH], true);
+                $entity->is_supplier = in_array($entity->type, [EntityType::SUPPLIER, EntityType::BOTH], true);
+            }
+        });
     }
 }
