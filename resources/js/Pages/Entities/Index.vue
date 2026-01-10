@@ -166,6 +166,31 @@ const inactiveCount = computed(
     () => entities.value.filter((e) => e.status === "inactive").length
 );
 
+const typeBadge = (type) => {
+    switch (type) {
+        case "client":
+            return {
+                label: "Cliente",
+                class: "bg-blue-100 text-blue-700",
+            };
+        case "supplier":
+            return {
+                label: "Fornecedor",
+                class: "bg-purple-200 text-purple-700",
+            };
+        case "both":
+            return {
+                label: "Ambos",
+                class: "bg-green-100 text-green-700",
+            };
+        default:
+            return {
+                label: "—",
+                class: "bg-gray-100 text-gray-500",
+            };
+    }
+};
+
 // abrir modal criar
 const openCreateModal = () => {
     mode.value = "create";
@@ -376,6 +401,7 @@ onMounted(loadEntities);
                     <th class="w-16 px-3 py-2 text-left">Nº</th>
                     <th class="px-3 py-2 text-left">Nome</th>
                     <th class="w-40 px-3 py-2 text-left">NIF</th>
+                    <th class="w-32 px-3 py-2 text-center">Tipo</th>
                     <th class="w-28 px-3 py-2 text-center">Estado</th>
                     <th class="w-40 px-3 py-2 text-center">Ações</th>
                 </tr>
@@ -430,6 +456,17 @@ onMounted(loadEntities);
                     <td class="px-3 py-2 font-mono text-sm">
                         {{ e.nif_normalized }}
                     </td>
+                    <td class="px-3 py-2 text-center">
+                        <span
+                            :class="[
+                                'px-2 py-1 rounded-full text-xs font-medium',
+                                typeBadge(e.type).class,
+                            ]"
+                        >
+                            {{ typeBadge(e.type).label }}
+                        </span>
+                    </td>
+
                     <td class="px-3 py-2 text-center">
                         <span
                             :class="[
