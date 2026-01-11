@@ -31,6 +31,9 @@ const errors = ref({});
 const mode = ref("create");
 const editingId = ref(null);
 
+const showConfirm = ref(false);
+const articleToToggle = ref(null);
+
 const form = ref({
     code: "",
     name: "",
@@ -139,6 +142,21 @@ const toggleStatus = async (article) => {
     } catch (e) {
         alert("Erro ao alterar o estado do artigo.");
     }
+};
+
+const confirmToggle = (article) => {
+    articleToToggle.value = article;
+    showConfirm.value = true;
+};
+
+const toggleStatusConfirmed = async () => {
+    if (!articleToToggle.value) return;
+
+    await axios.patch(`/articles/${articleToToggle.value.id}/toggle-status`);
+
+    showConfirm.value = false;
+    articleToToggle.value = null;
+    loadArticles(currentPage.value);
 };
 
 // =======================
@@ -270,20 +288,17 @@ onMounted(() => {
                     </td>
                     <td class="px-3 py-2 text-center space-x-3">
                         <button
-                            class="text-blue-600 hover:underline"
-                            @click="openEditModal(a)"
-                        >
-                            Editar
-                        </button>
-
-                        <button
                             class="text-sm hover:underline"
                             :class="
                                 a.status === 'active'
                                     ? 'text-red-600'
                                     : 'text-green-600'
                             "
-                            @click="toggleStatus(a)"
+                            @click="
+                                a.status === 'active'
+                                    ? confirmToggle(a)
+                                    : toggleStatus(a)
+                            "
                         >
                             {{ a.status === "active" ? "Desativar" : "Ativar" }}
                         </button>
@@ -298,6 +313,40 @@ onMounted(() => {
                 </tr>
             </tbody>
         </table>
+
+        <!-- MODAL CONFIRMAÇÃO DESATIVAR -->
+        <div
+            v-if="showConfirm"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+            <div class="bg-white rounded shadow-lg p-6 w-full max-w-md">
+                <h2 class="text-lg font-semibold mb-3 text-red-600">
+                    Desativar artigo
+                </h2>
+
+                <p class="mb-6">
+                    Tens a certeza que pretendes desativar o artigo
+                    <strong>{{ articleToToggle?.name }}</strong
+                    >?
+                </p>
+
+                <div class="flex justify-end gap-3">
+                    <button
+                        class="px-4 py-2 border rounded"
+                        @click="showConfirm = false"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        class="px-4 py-2 bg-red-600 text-white rounded"
+                        @click="toggleStatusConfirmed"
+                    >
+                        Desativar
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- PAGINAÇÃO -->
         <EntitiesPagination
