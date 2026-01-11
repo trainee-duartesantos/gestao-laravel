@@ -140,4 +140,19 @@ class EntityController extends Controller
         $entity->delete();
         return response()->noContent();
     }
+
+    public function clientsPage()
+    {
+        return Inertia::render('Entities/Index', [
+            'initialType' => 'client',
+        ]);
+    }
+
+    public function suppliersPage()
+    {
+        return Inertia::render('Entities/Index', [
+            'initialType' => 'supplier',
+        ]);
+    }
+
 }

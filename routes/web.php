@@ -35,6 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/entities', [EntityController::class, 'page'])
         ->name('entities.page');
 
+    Route::get('/clientes', [EntityController::class, 'clientsPage'])->name('clients');
+    Route::get('/fornecedores', [EntityController::class, 'suppliersPage'])->name('suppliers');
+
     // JSON (Axios)
     Route::prefix('entities')->group(function () {
         Route::get('/list', [EntityController::class, 'index'])

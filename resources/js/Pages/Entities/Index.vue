@@ -1,21 +1,25 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import axios from "axios";
+import { usePage } from "@inertiajs/vue3";
+
 import EntityModal from "@/Components/Entities/EntityModal.vue";
 import EntitiesFilters from "@/Components/Entities/EntitiesFilters.vue";
 import EntitiesPagination from "@/Components/Entities/EntitiesPagination.vue";
 import EntitiesPerPage from "@/Components/Entities/EntitiesPerPage.vue";
 
-import { watch } from "vue";
+// 🔹 Inertia page props
+const page = usePage();
+const initialType = page.props.initialType ?? "";
 
-// estado
+// 🔹 estado
 const entities = ref([]);
 const loading = ref(true);
 const showModal = ref(false);
 const saving = ref(false);
 const errors = ref({});
 const filterStatus = ref("all");
-const filterType = ref("");
+const filterType = ref(initialType); // ✅ AGORA JÁ EXISTE
 const search = ref("");
 const currentPage = ref(1);
 const lastPage = ref(1);
@@ -37,8 +41,7 @@ const form = ref({
     name: "",
     nif: "",
     email: "",
-    is_customer: true,
-    is_supplier: false,
+    type: filterType.value || "client",
 });
 
 const makeCacheKey = (page) => {
@@ -209,8 +212,7 @@ const openEditModal = (entity) => {
         name: entity.name,
         nif: entity.nif_normalized,
         email: "",
-        is_customer: entity.is_customer ?? false,
-        is_supplier: entity.is_supplier ?? false,
+        type: entity.type,
     };
 
     errors.value = {};
@@ -261,8 +263,7 @@ const resetForm = () => {
         name: "",
         nif: "",
         email: "",
-        is_customer: true,
-        is_supplier: false,
+        type: filterType.value || "client",
     };
 };
 
@@ -338,13 +339,24 @@ const visiblePages = computed(() => {
     return pages;
 });
 
-onMounted(loadEntities);
+onMounted(() => {
+    pagesCache.value = {};
+    loadEntities(1);
+});
 </script>
 
 <template>
     <div class="p-6">
         <div class="flex justify-between mb-6">
-            <h1 class="text-2xl font-bold">Entidades</h1>
+            <h1 class="text-2xl font-bold">
+                {{
+                    filterType === "client"
+                        ? "Clientes"
+                        : filterType === "supplier"
+                        ? "Fornecedores"
+                        : "Entidades"
+                }}
+            </h1>
 
             <button
                 @click="openCreateModal"
