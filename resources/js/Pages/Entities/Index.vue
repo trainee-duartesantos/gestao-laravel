@@ -74,7 +74,16 @@ const syncUrl = () => {
     }
 
     const query = params.toString();
-    const url = query ? `?${query}` : window.location.pathname;
+
+    let basePath = "/entities";
+
+    if (filterType.value === "client") basePath = "/clientes";
+    else if (filterType.value === "supplier") basePath = "/fornecedores";
+    else if (filterType.value === "both") basePath = "/entities?type=both";
+
+    const url = query
+        ? `${basePath}${basePath.includes("?") ? "&" : "?"}${query}`
+        : basePath;
 
     window.history.replaceState({}, "", url);
 };
@@ -135,6 +144,25 @@ const loadEntities = async (page = 1) => {
     }
 };
 
+const setTypeFromTab = (type) => {
+    pagesCache.value = {};
+    filterType.value = type;
+    currentPage.value = 1;
+
+    let url = "/entities";
+
+    if (type === "client") {
+        url = "/clientes";
+    } else if (type === "supplier") {
+        url = "/fornecedores";
+    } else if (type === "both") {
+        url = "/entities?type=both";
+    }
+
+    window.history.pushState({}, "", url);
+    loadEntities(1);
+};
+
 watch(search, () => {
     clearTimeout(searchTimeout);
 
@@ -150,11 +178,6 @@ watch(filterStatus, () => {
 });
 
 watch(perPage, () => {
-    pagesCache.value = {};
-    loadEntities(1);
-});
-
-watch(filterType, () => {
     pagesCache.value = {};
     loadEntities(1);
 });
@@ -339,7 +362,23 @@ const visiblePages = computed(() => {
     return pages;
 });
 
+const initTypeFromUrl = () => {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+
+    if (path === "/clientes") {
+        filterType.value = "client";
+    } else if (path === "/fornecedores") {
+        filterType.value = "supplier";
+    } else if (params.get("type") === "both") {
+        filterType.value = "both";
+    } else {
+        filterType.value = "";
+    }
+};
+
 onMounted(() => {
+    initTypeFromUrl();
     pagesCache.value = {};
     loadEntities(1);
 });
@@ -380,7 +419,7 @@ onMounted(() => {
 
         <div class="flex gap-2 mb-4">
             <button
-                @click="filterType = ''"
+                @click="setTypeFromTab('')"
                 :class="[
                     'px-4 py-2 rounded text-sm font-medium border',
                     filterType === ''
@@ -392,7 +431,7 @@ onMounted(() => {
             </button>
 
             <button
-                @click="filterType = 'client'"
+                @click="setTypeFromTab('client')"
                 :class="[
                     'px-4 py-2 rounded text-sm font-medium border',
                     filterType === 'client'
@@ -404,7 +443,7 @@ onMounted(() => {
             </button>
 
             <button
-                @click="filterType = 'supplier'"
+                @click="setTypeFromTab('supplier')"
                 :class="[
                     'px-4 py-2 rounded text-sm font-medium border',
                     filterType === 'supplier'
@@ -416,7 +455,7 @@ onMounted(() => {
             </button>
 
             <button
-                @click="filterType = 'both'"
+                @click="setTypeFromTab('both')"
                 :class="[
                     'px-4 py-2 rounded text-sm font-medium border',
                     filterType === 'both'
