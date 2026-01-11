@@ -5,6 +5,7 @@ use App\Http\Controllers\EntityController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\ContactRoleController;
+use App\Http\Controllers\ArticleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -115,6 +116,26 @@ Route::middleware('auth')->group(function () {
         Route::delete('/contact-roles/{contactRole}', [ContactRoleController::class, 'destroy'])
             ->name('settings.contact-roles.destroy');
     });
+
+    // ================= ARTICLES =================
+
+    Route::get('/artigos', [ArticleController::class, 'page'])
+        ->name('articles.page');
+
+    Route::prefix('articles')->group(function () {
+        Route::get('/list', [ArticleController::class, 'index'])
+            ->name('articles.list');
+
+        Route::post('/', [ArticleController::class, 'store'])
+            ->name('articles.store');
+
+        Route::put('{article}', [ArticleController::class, 'update'])
+            ->name('articles.update');
+
+        Route::patch('{article}/toggle-status', [ArticleController::class, 'toggleStatus'])
+            ->name('articles.toggleStatus');
+    });
+
 });
 
 require __DIR__ . '/auth.php';
