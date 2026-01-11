@@ -366,12 +366,55 @@ onMounted(loadEntities);
             @update:search="search = $event"
         />
 
-        <select v-model="filterType" class="border rounded px-3 py-2 ml-4">
-            <option value="">Todos os tipos</option>
-            <option value="client">Clientes</option>
-            <option value="supplier">Fornecedores</option>
-            <option value="both">Ambos</option>
-        </select>
+        <div class="flex gap-2 mb-4">
+            <button
+                @click="filterType = ''"
+                :class="[
+                    'px-4 py-2 rounded text-sm font-medium border',
+                    filterType === ''
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+                ]"
+            >
+                Todas
+            </button>
+
+            <button
+                @click="filterType = 'client'"
+                :class="[
+                    'px-4 py-2 rounded text-sm font-medium border',
+                    filterType === 'client'
+                        ? 'bg-blue-100 text-blue-700 border-blue-300'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+                ]"
+            >
+                Clientes
+            </button>
+
+            <button
+                @click="filterType = 'supplier'"
+                :class="[
+                    'px-4 py-2 rounded text-sm font-medium border',
+                    filterType === 'supplier'
+                        ? 'bg-purple-100 text-purple-700 border-purple-300'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+                ]"
+            >
+                Fornecedores
+            </button>
+
+            <button
+                @click="filterType = 'both'"
+                :class="[
+                    'px-4 py-2 rounded text-sm font-medium border',
+                    filterType === 'both'
+                        ? 'bg-green-100 text-green-700 border-green-300'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+                ]"
+            >
+                Ambos
+            </button>
+        </div>
 
         <div class="flex justify-between items-center mb-3">
             <EntitiesPerPage v-model="perPage" />
