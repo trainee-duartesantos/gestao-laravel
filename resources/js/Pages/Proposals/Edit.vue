@@ -72,6 +72,21 @@ const closeProposal = async () => {
     await axios.post(`/proposals/${proposal.value.id}/close`);
     await reloadProposal();
 };
+
+const convertToInvoice = async () => {
+    if (
+        !confirm(
+            "Converter esta proposta em fatura? Esta ação não pode ser revertida."
+        )
+    ) {
+        return;
+    }
+
+    const res = await axios.post(`/proposals/${proposal.value.id}/invoice`);
+
+    // 👉 redirecionar para a fatura
+    window.location.href = `/faturas/${res.data.invoice_id}/edit`;
+};
 </script>
 
 <template>
@@ -161,6 +176,14 @@ const closeProposal = async () => {
             class="bg-green-600 text-white px-4 py-2 rounded"
         >
             Fechar proposta
+        </button>
+
+        <button
+            v-if="proposal.status === 'closed'"
+            @click="convertToInvoice"
+            class="bg-purple-600 text-white px-4 py-2 rounded mt-4"
+        >
+            Converter em fatura
         </button>
     </div>
 </template>

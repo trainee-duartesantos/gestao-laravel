@@ -201,4 +201,56 @@ class ProposalController extends Controller
             'success' => true,
         ]);
     }
+
+    public function convertToInvoice(Document $proposal)
+    {
+        abort_unless($proposal->type === 'proposal', 404);
+        abort_unless($proposal->status === 'closed', 403);
+
+        if ($proposal->lines()->count() === 0) {
+            return response()->json([
+                'message' => 'A proposta não tem linhas.'
+            ], 422);
+        }
+
+        $invoice = DB::transaction(function () use ($proposal) {
+
+            // 1️⃣ Criar fatura
+            $invoice = Document::create([
+                'type' => 'invoice',
+                'number' => Document::nextNumber('invoice'),
+                'entity_id' => $proposal->entity_id,
+                'date' => now(),
+                'due_date' => now()->addDays(30),
+                'status' => 'issued',
+                'subtotal' => 0,
+                'vat_total' => 0,
+                'total' => 0,
+            ]);
+
+            // 2️⃣ Copiar linhas
+            foreach ($proposal->lines as $line) {
+                DocumentLine::create([
+                    'document_id' => $invoice->id,
+                    'article_id' => $line->article_id,
+                    'description' => $line->description,
+                    'quantity' => $line->quantity,
+                    'unit_price' => $line->unit_price,
+                    'vat_rate' => $line->vat_rate,
+                    'subtotal' => $line->subtotal,
+                    'vat_amount' => $line->vat_amount,
+                    'total' => $line->total,
+                ]);
+            }
+
+            // 3️⃣ Recalcular totais da fatura
+            $invoice->recalculateTotals();
+
+            return $invoice;
+        });
+
+        return response()->json([
+            'invoice_id' => $invoice->id,
+        ], 201);
+    }
 }
