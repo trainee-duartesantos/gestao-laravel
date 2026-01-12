@@ -23,6 +23,13 @@ const addLine = async ({ article_id, quantity }) => {
     // 🔥 atualização em tempo real (sem reload)
     await reloadProposal();
 };
+
+const removeLine = async (lineId) => {
+    if (!confirm("Remover esta linha da proposta?")) return;
+
+    await axios.delete(`/proposals/lines/${lineId}`);
+    await reloadProposal();
+};
 </script>
 
 <template>
@@ -61,6 +68,7 @@ const addLine = async ({ article_id, quantity }) => {
                     <th class="p-2 text-right">Qtd</th>
                     <th class="p-2 text-right">Preço</th>
                     <th class="p-2 text-right">Total</th>
+                    <th class="p-2 text-right">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,6 +77,15 @@ const addLine = async ({ article_id, quantity }) => {
                     <td class="p-2 text-right">{{ line.quantity }}</td>
                     <td class="p-2 text-right">{{ line.unit_price }} €</td>
                     <td class="p-2 text-right">{{ line.total }} €</td>
+                    <td class="p-2 text-right">
+                        <button
+                            v-if="proposal.status === 'draft'"
+                            @click="removeLine(line.id)"
+                            class="text-red-600 hover:underline"
+                        >
+                            Remover
+                        </button>
+                    </td>
                 </tr>
             </tbody>
         </table>

@@ -134,4 +134,21 @@ class ProposalController extends Controller
             'success' => true,
         ]);
     }
+
+    public function removeLine(DocumentLine $line)
+    {
+        $proposal = $line->document;
+
+        abort_unless($proposal->type === 'proposal', 404);
+        abort_unless($proposal->status === 'draft', 403);
+
+        $line->delete();
+
+        $proposal->recalculateTotals();
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
 }

@@ -158,6 +158,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
             ->name('proposals.lines.store');
 
+        Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
+            ->name('proposals.lines.destroy');
+
         Route::get('/list', [ProposalController::class, 'index'])
             ->name('proposals.list');
 
