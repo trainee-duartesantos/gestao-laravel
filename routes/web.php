@@ -7,6 +7,7 @@ use App\Http\Controllers\CountryController;
 use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProposalController;
+use App\Http\Controllers\InvoiceController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -179,6 +180,29 @@ Route::middleware('auth')->group(function () {
         Route::get('/{proposal}', [ProposalController::class, 'show'])
             ->name('proposals.show');
     });
+
+    // ================= INVOICES =================
+
+    // Página Inertia (lista)
+    Route::get('/faturas', [InvoiceController::class, 'page'])
+        ->name('invoices.page');
+
+    // Página Inertia (ver fatura)
+    Route::get('/faturas/{invoice}/edit', [InvoiceController::class, 'edit'])
+        ->name('invoices.edit');
+
+    // JSON
+    Route::prefix('invoices')->group(function () {
+        Route::get('/list', [InvoiceController::class, 'index'])
+            ->name('invoices.list');
+
+        Route::get('/{invoice}', [InvoiceController::class, 'show'])
+            ->name('invoices.show');
+
+        Route::post('/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
+            ->name('invoices.markPaid');
+    });
+
 });
 
 require __DIR__ . '/auth.php';
