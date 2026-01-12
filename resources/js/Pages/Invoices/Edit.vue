@@ -67,7 +67,7 @@ const markAsPaid = async () => {
         </div>
 
         <!-- AÇÕES -->
-        <div class="mt-6">
+        <div class="flex justify-between items-center mb-4">
             <button
                 v-if="invoice.status === 'issued'"
                 @click="markAsPaid"
@@ -75,6 +75,14 @@ const markAsPaid = async () => {
             >
                 Marcar como paga
             </button>
+
+            <a
+                :href="`/faturas/${invoice.id}/pdf`"
+                target="_blank"
+                class="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+                Download PDF
+            </a>
         </div>
     </div>
 </template>

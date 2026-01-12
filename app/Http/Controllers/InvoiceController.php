@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -75,5 +76,20 @@ class InvoiceController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function downloadPdf(Document $invoice)
+    {
+        abort_unless($invoice->type === 'invoice', 404);
+
+        $invoice->load('entity', 'lines');
+
+        $pdf = Pdf::loadView('pdf.invoice', [
+            'invoice' => $invoice
+        ]);
+
+        return $pdf->download(
+            'Fatura_' . $invoice->number . '.pdf'
+        );
     }
 }

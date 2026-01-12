@@ -191,6 +191,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/faturas/{invoice}/edit', [InvoiceController::class, 'edit'])
         ->name('invoices.edit');
 
+    Route::get('/faturas/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
+        ->name('invoices.pdf');
+
+
     // JSON
     Route::prefix('invoices')->group(function () {
         Route::get('/list', [InvoiceController::class, 'index'])
