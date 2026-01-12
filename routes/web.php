@@ -6,6 +6,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ProposalController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -135,6 +136,34 @@ Route::middleware('auth')->group(function () {
         Route::patch('{article}/toggle-status', [ArticleController::class, 'toggleStatus'])
             ->name('articles.toggleStatus');
     });
+
+    // ================= PROPOSALS =================
+
+    // Página Inertia (lista)
+    Route::get('/propostas', [ProposalController::class, 'page'])
+        ->name('proposals.page');
+
+    // Página Inertia (criar)
+    Route::get('/propostas/create', function () {
+        return Inertia::render('Proposals/Create');
+    })->name('proposals.create');
+
+    // JSON (Axios)
+    Route::prefix('proposals')->group(function () {
+
+        // Listagem
+        Route::get('/list', [ProposalController::class, 'index'])
+            ->name('proposals.list');
+
+        // Criar proposta (draft)
+        Route::post('/', [ProposalController::class, 'store'])
+            ->name('proposals.store');
+
+        // ⚠️ ESTA TEM DE FICAR SEMPRE NO FIM
+        Route::get('/{proposal}', [ProposalController::class, 'show'])
+            ->name('proposals.show');
+    });
+
 
 });
 
