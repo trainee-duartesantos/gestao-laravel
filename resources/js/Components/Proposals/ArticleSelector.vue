@@ -1,17 +1,17 @@
 <script setup>
-import { ref } from "vue";
-
-const props = defineProps({
-    articles: {
-        type: Array,
-        required: true,
-    },
-});
+import { ref, onMounted } from "vue";
+import axios from "axios";
 
 const emit = defineEmits(["add"]);
 
+const articles = ref([]);
 const selectedArticle = ref("");
 const quantity = ref(1);
+
+const loadArticles = async () => {
+    const res = await axios.get("/articles/list");
+    articles.value = res.data.data;
+};
 
 const addLine = () => {
     if (!selectedArticle.value) return;
@@ -24,6 +24,8 @@ const addLine = () => {
     selectedArticle.value = "";
     quantity.value = 1;
 };
+
+onMounted(loadArticles);
 </script>
 
 <template>

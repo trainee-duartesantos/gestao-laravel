@@ -8,7 +8,11 @@ const page = usePage();
 
 // dados já vêm do backend
 const proposal = ref(page.props.proposal);
-const articles = page.props.articles;
+
+const reloadProposal = async () => {
+    const res = await axios.get(`/proposals/${proposal.value.id}`);
+    proposal.value = res.data;
+};
 
 const addLine = async ({ article_id, quantity }) => {
     await axios.post(`/proposals/${proposal.value.id}/lines`, {
@@ -16,8 +20,8 @@ const addLine = async ({ article_id, quantity }) => {
         quantity,
     });
 
-    // refresca a página para atualizar linhas + totais
-    location.reload();
+    // 🔥 atualização em tempo real (sem reload)
+    await reloadProposal();
 };
 </script>
 
@@ -47,7 +51,7 @@ const addLine = async ({ article_id, quantity }) => {
         </div>
 
         <!-- ADICIONAR ARTIGO -->
-        <ArticleSelector :articles="articles" @add="addLine" />
+        <ArticleSelector @add="addLine" />
 
         <!-- LINHAS -->
         <table class="w-full border mt-6">
