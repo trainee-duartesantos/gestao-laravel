@@ -26,7 +26,7 @@ const createProposal = async () => {
         const res = await axios.post("/proposals", form.value);
 
         // redireciona para edição da proposta
-        router.visit(`/propostas/${res.data.id}`);
+        router.visit(`/propostas/${res.data.id}/edit`);
     } catch (e) {
         if (e.response?.status === 422) {
             errors.value = e.response.data.errors;

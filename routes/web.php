@@ -148,23 +148,25 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Proposals/Create');
     })->name('proposals.create');
 
+    // Página Inertia (editar)
+    Route::get('/propostas/{proposal}/edit', [ProposalController::class, 'edit'])
+        ->name('proposals.edit');
+
     // JSON (Axios)
     Route::prefix('proposals')->group(function () {
 
-        // Listagem
+        Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
+            ->name('proposals.lines.store');
+
         Route::get('/list', [ProposalController::class, 'index'])
             ->name('proposals.list');
 
-        // Criar proposta (draft)
         Route::post('/', [ProposalController::class, 'store'])
             ->name('proposals.store');
 
-        // ⚠️ ESTA TEM DE FICAR SEMPRE NO FIM
         Route::get('/{proposal}', [ProposalController::class, 'show'])
             ->name('proposals.show');
     });
-
-
 });
 
 require __DIR__ . '/auth.php';

@@ -86,4 +86,52 @@ class ProposalController extends Controller
             'total' => $proposal->total,
         ]);
     }
+
+    public function edit(Document $proposal)
+    {
+        abort_unless($proposal->type === 'proposal', 404);
+
+        return Inertia::render('Proposals/Edit', [
+            'proposal' => [
+                'id' => $proposal->id,
+                'number' => $proposal->number,
+                'date' => $proposal->date->format('Y-m-d'),
+                'validity' => $proposal->due_date?->format('Y-m-d'),
+                'status' => $proposal->status,
+                'entity_id' => $proposal->entity_id,
+                'subtotal' => $proposal->subtotal,
+                'vat_total' => $proposal->vat_total,
+                'total' => $proposal->total,
+            ],
+
+            // 🔑 ISTO É O QUE FALTAVA
+            'articles' => Article::where('active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'price']),
+        ]);
+    }
+
+    public function addLine(Request $request, Document $proposal)
+    {
+        abort_unless($proposal->type === 'proposal', 404);
+
+        $data = $request->validate([
+            'article_id' => ['required', 'exists:articles,id'],
+            'quantity' => ['nullable', 'numeric', 'min:0.01'],
+        ]);
+
+        $article = Article::with('vatRate')->findOrFail($data['article_id']);
+
+        DocumentLine::makeFromArticle(
+            $proposal,
+            $article,
+            $data['quantity'] ?? 1
+        );
+
+        $proposal->recalculateTotals();
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
 }
