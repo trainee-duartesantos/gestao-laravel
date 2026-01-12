@@ -16,11 +16,12 @@ const markAsPaid = async () => {
 };
 
 const sendInvoiceByEmail = async () => {
-    if (!confirm("Enviar fatura por email ao cliente?")) return;
-
-    await axios.post(`/invoices/${invoice.value.id}/send-email`);
-
-    alert("Fatura enviada com sucesso.");
+    try {
+        await axios.post(`/invoices/${invoice.value.id}/send-email`);
+        alert("Email enviado com sucesso");
+    } catch (e) {
+        alert(e.response?.data?.message ?? "Erro ao enviar email");
+    }
 };
 </script>
 
