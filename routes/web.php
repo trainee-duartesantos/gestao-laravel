@@ -194,6 +194,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/faturas/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->name('invoices.pdf');
 
+    Route::post('/invoices/{invoice}/send-email', [InvoiceController::class, 'sendByEmail'])
+        ->name('invoices.sendEmail');
+
 
     // JSON
     Route::prefix('invoices')->group(function () {

@@ -14,6 +14,14 @@ const markAsPaid = async () => {
     // atualizar estado local
     invoice.value.status = "paid";
 };
+
+const sendInvoiceByEmail = async () => {
+    if (!confirm("Enviar fatura por email ao cliente?")) return;
+
+    await axios.post(`/invoices/${invoice.value.id}/send-email`);
+
+    alert("Fatura enviada com sucesso.");
+};
 </script>
 
 <template>
@@ -38,6 +46,15 @@ const markAsPaid = async () => {
             </p>
         </div>
 
+        <div class="flex justify-end mb-4">
+            <a
+                :href="`/faturas/${invoice.id}/pdf`"
+                target="_blank"
+                class="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+                Download PDF
+            </a>
+        </div>
         <!-- LINHAS -->
         <table class="w-full border">
             <thead>
@@ -67,7 +84,14 @@ const markAsPaid = async () => {
         </div>
 
         <!-- AÇÕES -->
-        <div class="flex justify-between items-center mb-4">
+        <div class="mt-6 flex gap-3">
+            <button
+                @click="sendInvoiceByEmail"
+                class="bg-red-600 text-white px-4 py-2 rounded"
+            >
+                Enviar por email
+            </button>
+
             <button
                 v-if="invoice.status === 'issued'"
                 @click="markAsPaid"
@@ -75,14 +99,6 @@ const markAsPaid = async () => {
             >
                 Marcar como paga
             </button>
-
-            <a
-                :href="`/faturas/${invoice.id}/pdf`"
-                target="_blank"
-                class="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-                Download PDF
-            </a>
         </div>
     </div>
 </template>

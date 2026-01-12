@@ -6,6 +6,9 @@ use App\Models\Document;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Mail\InvoiceMail;
+use Illuminate\Support\Facades\Mail;
+
 
 class InvoiceController extends Controller
 {
@@ -92,4 +95,25 @@ class InvoiceController extends Controller
             'Fatura_' . $invoice->number . '.pdf'
         );
     }
+
+    public function sendByEmail(Document $invoice)
+    {
+        abort_unless($invoice->type === 'invoice', 404);
+
+        $invoice->load('entity', 'lines');
+
+        if (!$invoice->entity?->email) {
+            return response()->json([
+                'message' => 'O cliente não tem email definido.'
+            ], 422);
+        }
+
+        Mail::to($invoice->entity->email)
+            ->send(new InvoiceMail($invoice));
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
+
 }
