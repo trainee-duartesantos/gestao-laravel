@@ -41,17 +41,35 @@ const removeLine = async (lineId) => {
     await reloadProposal();
 };
 
-/**
- * Atualizar quantidade (inline)
- */
-const updateLineQuantity = async (line) => {
-    // otimista
-    line.total = line.quantity * line.unit_price * 1.06;
+const debounceTimers = {};
 
-    await axios.patch(`/proposals/lines/${line.id}`, {
-        quantity: line.quantity,
-    });
+const debouncedUpdateLine = (line) => {
+    // limpar debounce anterior dessa linha
+    if (debounceTimers[line.id]) {
+        clearTimeout(debounceTimers[line.id]);
+    }
 
+    debounceTimers[line.id] = setTimeout(async () => {
+        await axios.patch(`/proposals/lines/${line.id}`, {
+            quantity: line.quantity,
+        });
+
+        await reloadProposal();
+    }, 500); // 400–600ms é o sweet spot
+};
+
+const recalcLineTotal = (line) => {
+    const subtotal = line.quantity * line.unit_price;
+    const vat = subtotal * (line.vat_rate / 100);
+    line.total = +(subtotal + vat).toFixed(2);
+};
+
+const closeProposal = async () => {
+    if (!confirm("Fechar esta proposta? Não será possível editar depois.")) {
+        return;
+    }
+
+    await axios.post(`/proposals/${proposal.value.id}/close`);
     await reloadProposal();
 };
 </script>
@@ -105,7 +123,10 @@ const updateLineQuantity = async (line) => {
                             min="0.01"
                             step="0.01"
                             v-model.number="line.quantity"
-                            @blur="updateLineQuantity(line)"
+                            @input="
+                                recalcLineTotal(line);
+                                debouncedUpdateLine(line);
+                            "
                             class="border rounded px-2 py-1 w-20 text-right"
                             :disabled="proposal.status !== 'draft'"
                         />
@@ -134,5 +155,12 @@ const updateLineQuantity = async (line) => {
             <div>IVA: {{ proposal.vat_total }} €</div>
             <div class="font-bold text-lg">Total: {{ proposal.total }} €</div>
         </div>
+        <button
+            v-if="proposal.status === 'draft'"
+            @click="closeProposal"
+            class="bg-green-600 text-white px-4 py-2 rounded"
+        >
+            Fechar proposta
+        </button>
     </div>
 </template>

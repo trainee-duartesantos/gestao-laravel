@@ -138,6 +138,8 @@ class ProposalController extends Controller
 
     public function updateLine(Request $request, DocumentLine $line)
     {
+        abort_unless($line->document->status === 'draft', 403);
+
         $data = $request->validate([
             'quantity' => ['required', 'numeric', 'min:0.01'],
         ]);
@@ -180,4 +182,23 @@ class ProposalController extends Controller
         ]);
     }
 
+    public function close(Document $proposal)
+    {
+        abort_unless($proposal->type === 'proposal', 404);
+        abort_unless($proposal->status === 'draft', 403);
+
+        if ($proposal->lines()->count() === 0) {
+            return response()->json([
+                'message' => 'A proposta não tem linhas.'
+            ], 422);
+        }
+
+        $proposal->update([
+            'status' => 'closed',
+        ]);
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
 }

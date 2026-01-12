@@ -170,6 +170,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [ProposalController::class, 'store'])
             ->name('proposals.store');
 
+        Route::post('/{proposal}/close', [ProposalController::class, 'close'])
+            ->name('proposals.close');
+
         Route::get('/{proposal}', [ProposalController::class, 'show'])
             ->name('proposals.show');
     });
