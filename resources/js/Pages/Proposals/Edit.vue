@@ -6,28 +6,52 @@ import ArticleSelector from "@/Components/Proposals/ArticleSelector.vue";
 
 const page = usePage();
 
-// dados já vêm do backend
+// fonte única de verdade
 const proposal = ref(page.props.proposal);
 
+/**
+ * Recarregar proposta completa (backend)
+ */
 const reloadProposal = async () => {
-    const res = await axios.get(`/proposals/${proposal.value.id}`);
-    proposal.value = res.data;
+    const { data } = await axios.get(`/proposals/${proposal.value.id}`);
+
+    // 🔥 mantém reatividade
+    Object.assign(proposal.value, data);
 };
 
+/**
+ * Adicionar linha
+ */
 const addLine = async ({ article_id, quantity }) => {
     await axios.post(`/proposals/${proposal.value.id}/lines`, {
         article_id,
         quantity,
     });
 
-    // 🔥 atualização em tempo real (sem reload)
     await reloadProposal();
 };
 
+/**
+ * Remover linha
+ */
 const removeLine = async (lineId) => {
     if (!confirm("Remover esta linha da proposta?")) return;
 
     await axios.delete(`/proposals/lines/${lineId}`);
+    await reloadProposal();
+};
+
+/**
+ * Atualizar quantidade (inline)
+ */
+const updateLineQuantity = async (line) => {
+    // otimista
+    line.total = line.quantity * line.unit_price * 1.06;
+
+    await axios.patch(`/proposals/lines/${line.id}`, {
+        quantity: line.quantity,
+    });
+
     await reloadProposal();
 };
 </script>
@@ -74,9 +98,23 @@ const removeLine = async (lineId) => {
             <tbody>
                 <tr v-for="line in proposal.lines" :key="line.id">
                     <td class="p-2">{{ line.description }}</td>
-                    <td class="p-2 text-right">{{ line.quantity }}</td>
+
+                    <td class="p-2 text-right">
+                        <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            v-model.number="line.quantity"
+                            @blur="updateLineQuantity(line)"
+                            class="border rounded px-2 py-1 w-20 text-right"
+                            :disabled="proposal.status !== 'draft'"
+                        />
+                    </td>
+
                     <td class="p-2 text-right">{{ line.unit_price }} €</td>
+
                     <td class="p-2 text-right">{{ line.total }} €</td>
+
                     <td class="p-2 text-right">
                         <button
                             v-if="proposal.status === 'draft'"

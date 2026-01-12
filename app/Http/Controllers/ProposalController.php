@@ -135,6 +135,35 @@ class ProposalController extends Controller
         ]);
     }
 
+
+    public function updateLine(Request $request, DocumentLine $line)
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $quantity = $data['quantity'];
+
+        // 🔥 RECALCULAR A LINHA
+        $subtotal = $quantity * $line->unit_price;
+        $vatAmount = $subtotal * ($line->vat_rate / 100);
+
+        $line->update([
+            'quantity' => $quantity,
+            'subtotal' => $subtotal,
+            'vat_amount' => $vatAmount,
+            'total' => $subtotal + $vatAmount,
+        ]);
+
+        // 🔥 RECALCULAR DOCUMENTO
+        $proposal = $line->document;
+        $proposal->recalculateTotals();
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
     public function removeLine(DocumentLine $line)
     {
         $proposal = $line->document;

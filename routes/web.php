@@ -161,6 +161,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
             ->name('proposals.lines.destroy');
 
+        Route::patch('/lines/{line}', [ProposalController::class, 'updateLine'])
+            ->name('proposals.lines.update');
+
         Route::get('/list', [ProposalController::class, 'index'])
             ->name('proposals.list');
 
