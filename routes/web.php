@@ -12,6 +12,7 @@ use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\Access\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -256,6 +257,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
+    Route::middleware(['auth', 'permission:users.view'])->group(function () {
+
+        // Página
+        Route::get('/gestao-acessos/roles', [RoleController::class, 'page'])
+            ->name('roles.page');
+
+        // API
+        Route::prefix('roles')->group(function () {
+
+            Route::get('/', [RoleController::class, 'index'])
+                ->name('roles.list');
+
+            Route::get('/permissions', [RoleController::class, 'permissions'])
+                ->name('roles.permissions');
+
+            Route::post('/', [RoleController::class, 'store'])
+                ->middleware('permission:users.create')
+                ->name('roles.store');
+
+            Route::put('/{role}', [RoleController::class, 'update'])
+                ->middleware('permission:users.edit')
+                ->name('roles.update');
+
+            Route::delete('/{role}', [RoleController::class, 'destroy'])
+                ->middleware('permission:users.delete')
+                ->name('roles.destroy');
+        });
+    });
 });
 
 require __DIR__ . '/auth.php';
