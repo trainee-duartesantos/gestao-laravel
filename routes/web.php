@@ -13,6 +13,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Access\RoleController;
+use App\Http\Controllers\Access\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -259,17 +260,41 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware(['auth', 'permission:users.view'])->group(function () {
     
-    // Página
-    Route::get('/gestao-acessos/roles', [RoleController::class, 'page'])
-        ->name('roles.page');
+        // Página
+        Route::get('/gestao-acessos/roles', [RoleController::class, 'page'])
+            ->name('roles.page');
 
-    // API
-    Route::get('/gestao-acessos/roles/list', [RoleController::class, 'index'])->name('roles.list');
-    Route::get('/gestao-acessos/roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
-    Route::post('/gestao-acessos/roles', [RoleController::class, 'store'])->name('roles.store');
-    Route::put('/gestao-acessos/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/gestao-acessos/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-});
+        // API
+        Route::get('/gestao-acessos/roles/list', [RoleController::class, 'index'])->name('roles.list');
+        Route::get('/gestao-acessos/roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+        Route::post('/gestao-acessos/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::put('/gestao-acessos/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('/gestao-acessos/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+
+    Route::middleware(['auth', 'permission:users.view'])->group(function () {
+
+        // Página
+        Route::get('/gestao-acessos/utilizadores', [UserController::class, 'page'])
+            ->name('users.page');
+
+        // API
+        Route::get('/gestao-acessos/utilizadores/list', [UserController::class, 'index'])
+            ->name('users.list');
+
+        Route::post('/gestao-acessos/utilizadores', [UserController::class, 'store'])
+            ->middleware('permission:users.create')
+            ->name('users.store');
+
+        Route::put('/gestao-acessos/utilizadores/{user}', [UserController::class, 'update'])
+            ->middleware('permission:users.edit')
+            ->name('users.update');
+
+        Route::delete('/gestao-acessos/utilizadores/{user}', [UserController::class, 'destroy'])
+            ->middleware('permission:users.delete')
+            ->name('users.destroy');
+    });
+
 });
 
 require __DIR__ . '/auth.php';
