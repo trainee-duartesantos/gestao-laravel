@@ -8,9 +8,13 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
+    
     public function page()
     {
         return Inertia::render('Access/Users/Index');
@@ -34,6 +38,8 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', User::class);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -50,9 +56,9 @@ class UserController extends Controller
             'password' => bcrypt(str()->random(32)),
         ]);
 
-        $user->syncRoles([$data['role']]);
+        $role = Role::findOrFail($data['role_id']);
+        $user->syncRoles([$role->name]);
 
-        // Enviar email para definir password
         Password::sendResetLink(['email' => $user->email]);
 
         return back()->with('success', 'Utilizador criado com sucesso.');
@@ -60,14 +66,19 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        // Segurança: não pode desativar-se a si próprio
+        $this->authorize('update', $user);
+        $this->authorize('assignRole', $user);
+
         if ($request->user()->id === $user->id && ! $request->boolean('is_active')) {
-            return back()->withErrors(['is_active' => 'Não pode desativar o seu próprio utilizador.']);
+            return back()->withErrors([
+                'is_active' => 'Não pode desativar o seu próprio utilizador.'
+            ]);
         }
 
-        // Proteger Admin
         if ($user->hasRole('Admin') && ! $request->boolean('is_active')) {
-            return back()->withErrors(['is_active' => 'Não pode desativar um utilizador Admin.']);
+            return back()->withErrors([
+                'is_active' => 'Não pode desativar um utilizador Admin.'
+            ]);
         }
 
         $data = $request->validate([
@@ -78,8 +89,15 @@ class UserController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $user->update($data);
-        $user->syncRoles([$data['role_id']]);
+        $user->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'is_active' => $data['is_active'],
+        ]);
+
+        $role = Role::findOrFail($data['role_id']);
+        $user->syncRoles([$role->name]);
 
         return back()->with('success', 'Utilizador atualizado com sucesso.');
     }
