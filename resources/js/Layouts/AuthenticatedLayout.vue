@@ -37,13 +37,8 @@ watch(
     (flash) => {
         if (!flash) return;
 
-        if (flash.success) {
-            toast.success(flash.success);
-        }
-
-        if (flash.error) {
-            toast.error(flash.error);
-        }
+        if (flash.success) toast.success(flash.success);
+        if (flash.error) toast.error(flash.error);
     },
     { deep: true }
 );
@@ -110,13 +105,7 @@ watch(
                                 Faturas
                             </NavLink>
 
-                            <NavLink
-                                v-if="hasRole('Admin')"
-                                :href="route('settings.countries.page')"
-                                :active="route().current('settings.*')"
-                            >
-                                Configurações
-                            </NavLink>
+                            <!-- Gestão de Acessos -->
                             <NavLink
                                 v-if="can('users.view')"
                                 :href="route('users.page')"
@@ -131,6 +120,15 @@ watch(
                                 :active="route().current('roles.*')"
                             >
                                 Roles
+                            </NavLink>
+
+                            <!-- Configurações -->
+                            <NavLink
+                                v-if="can('settings.view')"
+                                :href="route('settings.logs.page')"
+                                :active="route().current('settings.logs.*')"
+                            >
+                                Logs
                             </NavLink>
                         </div>
                     </div>
@@ -176,7 +174,7 @@ watch(
                         </Dropdown>
                     </div>
 
-                    <!-- Mobile hamburger -->
+                    <!-- Mobile Hamburger -->
                     <div class="-me-2 flex items-center sm:hidden">
                         <button
                             @click="
@@ -221,34 +219,65 @@ watch(
 
             <!-- Mobile Menu -->
             <div v-show="showingNavigationDropdown" class="sm:hidden">
-                <ResponsiveNavLink
-                    v-if="can('clients.view')"
-                    :href="route('clients')"
-                >
-                    Clientes
-                </ResponsiveNavLink>
+                <div class="space-y-1 pb-3 pt-2">
+                    <ResponsiveNavLink
+                        v-if="can('clients.view')"
+                        :href="route('clients')"
+                    >
+                        Clientes
+                    </ResponsiveNavLink>
 
-                <ResponsiveNavLink
-                    v-if="can('suppliers.view')"
-                    :href="route('suppliers')"
-                >
-                    Fornecedores
-                </ResponsiveNavLink>
+                    <ResponsiveNavLink
+                        v-if="can('suppliers.view')"
+                        :href="route('suppliers')"
+                    >
+                        Fornecedores
+                    </ResponsiveNavLink>
 
-                <ResponsiveNavLink
-                    v-if="can('articles.view')"
-                    :href="route('articles.page')"
-                >
-                    Artigos
-                </ResponsiveNavLink>
+                    <ResponsiveNavLink
+                        v-if="can('articles.view')"
+                        :href="route('articles.page')"
+                    >
+                        Artigos
+                    </ResponsiveNavLink>
 
-                <ResponsiveNavLink
-                    v-if="can('invoices.view')"
-                    :href="route('invoices.page')"
-                >
-                    Faturas
-                </ResponsiveNavLink>
+                    <ResponsiveNavLink
+                        v-if="can('proposals.view')"
+                        :href="route('proposals.page')"
+                    >
+                        Propostas
+                    </ResponsiveNavLink>
 
+                    <ResponsiveNavLink
+                        v-if="can('invoices.view')"
+                        :href="route('invoices.page')"
+                    >
+                        Faturas
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('users.view')"
+                        :href="route('users.page')"
+                    >
+                        Utilizadores
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('users.view')"
+                        :href="route('roles.page')"
+                    >
+                        Roles
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('settings.view')"
+                        :href="route('settings.logs.page')"
+                    >
+                        Logs
+                    </ResponsiveNavLink>
+                </div>
+
+                <!-- Mobile User Info -->
                 <div class="border-t border-gray-200 pb-1 pt-4">
                     <div class="px-4">
                         <div class="text-base font-medium text-gray-800">
