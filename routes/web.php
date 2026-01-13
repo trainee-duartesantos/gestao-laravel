@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EntityController;
 use App\Http\Controllers\ContactController;
@@ -8,9 +12,12 @@ use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\InvoiceController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+
+/*
+|--------------------------------------------------------------------------
+| Public
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -21,193 +28,232 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Authenticated
+|--------------------------------------------------------------------------
+*/
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    // ================= PROFILE =================
+    Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
+        ->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profile
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ================= ENTITIES =================
+    /*
+    |--------------------------------------------------------------------------
+    | ENTITIES (Clientes / Fornecedores)
+    |--------------------------------------------------------------------------
+    */
 
-    // Página Inertia
-    Route::get('/entities', [EntityController::class, 'page'])
-        ->name('entities.page');
+    Route::middleware('permission:clients.view')->group(function () {
 
-    Route::get('/clientes', [EntityController::class, 'clientsPage'])->name('clients');
-    Route::get('/fornecedores', [EntityController::class, 'suppliersPage'])->name('suppliers');
+        Route::get('/clientes', [EntityController::class, 'clientsPage'])->name('clients');
+        Route::get('/fornecedores', [EntityController::class, 'suppliersPage'])->name('suppliers');
 
-    // JSON (Axios)
-    Route::prefix('entities')->group(function () {
-        Route::get('/list', [EntityController::class, 'index'])
-            ->name('entities.list');
+        Route::prefix('entities')->group(function () {
 
-        Route::post('/', [EntityController::class, 'store'])
-            ->name('entities.store');
+            Route::get('/list', [EntityController::class, 'index'])->name('entities.list');
 
-        Route::get('{entity}', [EntityController::class, 'show'])
-            ->name('entities.show');
+            Route::post('/', [EntityController::class, 'store'])
+                ->middleware('permission:clients.create')
+                ->name('entities.store');
 
-        Route::put('{entity}', [EntityController::class, 'update'])
-            ->name('entities.update');
+            Route::get('{entity}', [EntityController::class, 'show'])->name('entities.show');
 
-        Route::delete('{entity}', [EntityController::class, 'destroy'])
-            ->name('entities.destroy');
+            Route::put('{entity}', [EntityController::class, 'update'])
+                ->middleware('permission:clients.edit')
+                ->name('entities.update');
+
+            Route::delete('{entity}', [EntityController::class, 'destroy'])
+                ->middleware('permission:clients.delete')
+                ->name('entities.destroy');
+        });
+
+        Route::patch('/entities/{entity}/toggle-status', [EntityController::class, 'toggleStatus'])
+            ->middleware('permission:clients.edit')
+            ->name('entities.toggleStatus');
     });
 
-    Route::patch('/entities/{entity}/toggle-status', [EntityController::class, 'toggleStatus'])
-        ->name('entities.toggleStatus');
+    /*
+    |--------------------------------------------------------------------------
+    | CONTACTS
+    |--------------------------------------------------------------------------
+    */
 
-    // ================= CONTACTS =================
+    Route::middleware('permission:contacts.view')->group(function () {
 
-    Route::get('/entities/{entity}/contacts', [ContactController::class, 'page'])
-        ->name('entities.contacts.page');
+        Route::get('/entities/{entity}/contacts', [ContactController::class, 'page'])
+            ->name('entities.contacts.page');
 
-    Route::get('/entities/{entity}/contacts/list', [ContactController::class, 'index'])
-        ->name('entities.contacts.list');
+        Route::get('/entities/{entity}/contacts/list', [ContactController::class, 'index'])
+            ->name('entities.contacts.list');
 
-    Route::post('/entities/{entity}/contacts', [ContactController::class, 'store'])
-        ->name('entities.contacts.store');
+        Route::post('/entities/{entity}/contacts', [ContactController::class, 'store'])
+            ->middleware('permission:contacts.create')
+            ->name('entities.contacts.store');
 
-    Route::put('/contacts/{contact}', [ContactController::class, 'update'])
-        ->name('contacts.update');
+        Route::put('/contacts/{contact}', [ContactController::class, 'update'])
+            ->middleware('permission:contacts.edit')
+            ->name('contacts.update');
 
-    Route::patch('/contacts/{contact}/toggle-status', [ContactController::class, 'toggleStatus'])
-        ->name('contacts.toggleStatus');
+        Route::patch('/contacts/{contact}/toggle-status', [ContactController::class, 'toggleStatus'])
+            ->middleware('permission:contacts.edit')
+            ->name('contacts.toggleStatus');
 
-    Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])
-        ->name('contacts.destroy');
-
-    // ================= SETTINGS =================
-
-    Route::prefix('settings')->group(function () {
-
-        // -------- Countries --------
-        Route::get('/countries', [CountryController::class, 'page'])
-            ->name('settings.countries.page');
-
-        Route::get('/countries/list', [CountryController::class, 'index'])
-            ->name('settings.countries.list');
-
-        Route::post('/countries', [CountryController::class, 'store'])
-            ->name('settings.countries.store');
-
-        Route::put('/countries/{country}', [CountryController::class, 'update'])
-            ->name('settings.countries.update');
-
-        Route::delete('/countries/{country}', [CountryController::class, 'destroy'])
-            ->name('settings.countries.destroy');
-
-        // -------- Contact Roles --------
-        Route::get('/contact-roles', [ContactRoleController::class, 'page'])
-            ->name('settings.contact-roles.page');
-
-        Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])
-            ->name('settings.contact-roles.list');
-
-        Route::post('/contact-roles', [ContactRoleController::class, 'store'])
-            ->name('settings.contact-roles.store');
-
-        Route::put('/contact-roles/{contactRole}', [ContactRoleController::class, 'update'])
-            ->name('settings.contact-roles.update');
-
-        Route::delete('/contact-roles/{contactRole}', [ContactRoleController::class, 'destroy'])
-            ->name('settings.contact-roles.destroy');
+        Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])
+            ->middleware('permission:contacts.delete')
+            ->name('contacts.destroy');
     });
 
-    // ================= ARTICLES =================
+    /*
+    |--------------------------------------------------------------------------
+    | SETTINGS
+    |--------------------------------------------------------------------------
+    */
 
-    Route::get('/artigos', [ArticleController::class, 'page'])
-        ->name('articles.page');
+    Route::prefix('settings')
+        ->middleware('permission:settings.view')
+        ->group(function () {
 
-    Route::prefix('articles')->group(function () {
-        Route::get('/list', [ArticleController::class, 'index'])
-            ->name('articles.list');
+            // Countries
+            Route::get('/countries', [CountryController::class, 'page'])->name('settings.countries.page');
+            Route::get('/countries/list', [CountryController::class, 'index'])->name('settings.countries.list');
 
-        Route::post('/', [ArticleController::class, 'store'])
-            ->name('articles.store');
+            Route::post('/countries', [CountryController::class, 'store'])
+                ->middleware('permission:settings.create')
+                ->name('settings.countries.store');
 
-        Route::put('{article}', [ArticleController::class, 'update'])
-            ->name('articles.update');
+            Route::put('/countries/{country}', [CountryController::class, 'update'])
+                ->middleware('permission:settings.edit')
+                ->name('settings.countries.update');
 
-        Route::patch('{article}/toggle-status', [ArticleController::class, 'toggleStatus'])
-            ->name('articles.toggleStatus');
+            Route::delete('/countries/{country}', [CountryController::class, 'destroy'])
+                ->middleware('permission:settings.delete')
+                ->name('settings.countries.destroy');
+
+            // Contact Roles
+            Route::get('/contact-roles', [ContactRoleController::class, 'page'])->name('settings.contact-roles.page');
+            Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])->name('settings.contact-roles.list');
+
+            Route::post('/contact-roles', [ContactRoleController::class, 'store'])
+                ->middleware('permission:settings.create')
+                ->name('settings.contact-roles.store');
+
+            Route::put('/contact-roles/{contactRole}', [ContactRoleController::class, 'update'])
+                ->middleware('permission:settings.edit')
+                ->name('settings.contact-roles.update');
+
+            Route::delete('/contact-roles/{contactRole}', [ContactRoleController::class, 'destroy'])
+                ->middleware('permission:settings.delete')
+                ->name('settings.contact-roles.destroy');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | ARTICLES
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware('permission:articles.view')->group(function () {
+
+        Route::get('/artigos', [ArticleController::class, 'page'])->name('articles.page');
+
+        Route::prefix('articles')->group(function () {
+
+            Route::get('/list', [ArticleController::class, 'index'])->name('articles.list');
+
+            Route::post('/', [ArticleController::class, 'store'])
+                ->middleware('permission:articles.create')
+                ->name('articles.store');
+
+            Route::put('{article}', [ArticleController::class, 'update'])
+                ->middleware('permission:articles.edit')
+                ->name('articles.update');
+
+            Route::patch('{article}/toggle-status', [ArticleController::class, 'toggleStatus'])
+                ->middleware('permission:articles.edit')
+                ->name('articles.toggleStatus');
+        });
     });
 
-    // ================= PROPOSALS =================
+    /*
+    |--------------------------------------------------------------------------
+    | PROPOSALS
+    |--------------------------------------------------------------------------
+    */
 
-    // Página Inertia (lista)
-    Route::get('/propostas', [ProposalController::class, 'page'])
-        ->name('proposals.page');
+    Route::middleware('permission:proposals.view')->group(function () {
 
-    // Página Inertia (criar)
-    Route::get('/propostas/create', function () {
-        return Inertia::render('Proposals/Create');
-    })->name('proposals.create');
+        Route::get('/propostas', [ProposalController::class, 'page'])->name('proposals.page');
+        Route::get('/propostas/{proposal}/edit', [ProposalController::class, 'edit'])
+            ->middleware('permission:proposals.edit')
+            ->name('proposals.edit');
 
-    // Página Inertia (editar)
-    Route::get('/propostas/{proposal}/edit', [ProposalController::class, 'edit'])
-        ->name('proposals.edit');
+        Route::get('/propostas/create', fn () => Inertia::render('Proposals/Create'))
+            ->middleware('permission:proposals.create')
+            ->name('proposals.create');
 
-    // JSON (Axios)
-    Route::prefix('proposals')->group(function () {
+        Route::prefix('proposals')->group(function () {
 
-        Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
-            ->name('proposals.lines.store');
+            Route::get('/list', [ProposalController::class, 'index'])->name('proposals.list');
 
-        Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
-            ->name('proposals.lines.destroy');
+            Route::post('/', [ProposalController::class, 'store'])
+                ->middleware('permission:proposals.create')
+                ->name('proposals.store');
 
-        Route::patch('/lines/{line}', [ProposalController::class, 'updateLine'])
-            ->name('proposals.lines.update');
+            Route::post('/{proposal}/close', [ProposalController::class, 'close'])
+                ->middleware('permission:proposals.edit')
+                ->name('proposals.close');
 
-        Route::get('/list', [ProposalController::class, 'index'])
-            ->name('proposals.list');
+            Route::post('/{proposal}/invoice', [ProposalController::class, 'convertToInvoice'])
+                ->middleware('permission:proposals.edit')
+                ->name('proposals.convertToInvoice');
 
-        Route::post('/', [ProposalController::class, 'store'])
-            ->name('proposals.store');
+            Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
+                ->middleware('permission:proposals.edit');
 
-        Route::post('/{proposal}/close', [ProposalController::class, 'close'])
-            ->name('proposals.close');
+            Route::patch('/lines/{line}', [ProposalController::class, 'updateLine'])
+                ->middleware('permission:proposals.edit');
 
-        Route::post('/{proposal}/invoice', [ProposalController::class, 'convertToInvoice'])
-            ->name('proposals.convertToInvoice');
-
-        Route::get('/{proposal}', [ProposalController::class, 'show'])
-            ->name('proposals.show');
+            Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
+                ->middleware('permission:proposals.edit');
+        });
     });
 
-    // ================= INVOICES =================
+    /*
+    |--------------------------------------------------------------------------
+    | INVOICES
+    |--------------------------------------------------------------------------
+    */
 
-    // Página Inertia (lista)
-    Route::get('/faturas', [InvoiceController::class, 'page'])
-        ->name('invoices.page');
+    Route::middleware('permission:invoices.view')->group(function () {
 
-    // Página Inertia (ver fatura)
-    Route::get('/faturas/{invoice}/edit', [InvoiceController::class, 'edit'])
-        ->name('invoices.edit');
+        Route::get('/faturas', [InvoiceController::class, 'page'])->name('invoices.page');
+        Route::get('/faturas/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::get('/faturas/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
 
-    Route::get('/faturas/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
-        ->name('invoices.pdf');
+        Route::prefix('invoices')->group(function () {
 
-    Route::post('/invoices/{invoice}/send-email', [InvoiceController::class, 'sendByEmail'])
-        ->name('invoices.sendEmail');
+            Route::get('/list', [InvoiceController::class, 'index'])->name('invoices.list');
 
+            Route::post('/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
+                ->middleware('permission:invoices.edit')
+                ->name('invoices.markPaid');
 
-    // JSON
-    Route::prefix('invoices')->group(function () {
-        Route::get('/list', [InvoiceController::class, 'index'])
-            ->name('invoices.list');
-
-        Route::get('/{invoice}', [InvoiceController::class, 'show'])
-            ->name('invoices.show');
-
-        Route::post('/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
-            ->name('invoices.markPaid');
+            Route::post('/{invoice}/send-email', [InvoiceController::class, 'sendByEmail'])
+                ->middleware('permission:invoices.edit')
+                ->name('invoices.sendEmail');
+        });
     });
 
 });

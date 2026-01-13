@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,15 +16,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@gestao.com'],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@gestao.com',
-            'password' =>'password'
-        ]);
+        $admin->assignRole('Admin');
 
         $this->call([
+            PermissionSeeder::class,
             CountrySeeder::class,
             VatRateSeeder::class,
         ]);
