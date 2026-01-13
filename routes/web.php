@@ -269,7 +269,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [RoleController::class, 'index'])
                 ->name('roles.list');
 
-            Route::get('/permissions', [RoleController::class, 'permissions'])
+            Route::get('/{role}/permissions', [RoleController::class, 'permissions'])
                 ->name('roles.permissions');
 
             Route::post('/', [RoleController::class, 'store'])

@@ -36,12 +36,17 @@ class RoleController extends Controller
     /**
      * Lista de permissões disponíveis
      */
-    public function permissions()
+    public function permissions(Role $role)
     {
-        return Permission::orderBy('name')
-            ->get()
-            ->groupBy(fn ($p) => explode('.', $p->name)[0]);
+        return response()->json([
+            'role' => $role->only('id', 'name'),
+            'permissions' => Permission::all()
+                ->groupBy(fn ($p) => explode('.', $p->name)[0])
+                ->map(fn ($group) => $group->pluck('name')->values()),
+            'assigned' => $role->permissions->pluck('name')->values(),
+        ]);
     }
+
 
     /**
      * Criar Role
@@ -67,16 +72,22 @@ class RoleController extends Controller
      */
     public function update(Request $request, Role $role)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:roles,name,' . $role->id,
-            'permissions' => 'array',
+        $data = $request->validate([
+            'name' => ['sometimes', 'string'],
+            'permissions' => ['sometimes', 'array'],
         ]);
 
-        $role->update(['name' => $validated['name']]);
-        $role->syncPermissions($validated['permissions'] ?? []);
+        if (isset($data['name'])) {
+            $role->update(['name' => $data['name']]);
+        }
 
-        return response()->json(['success' => true]);
+        if (isset($data['permissions'])) {
+            $role->syncPermissions($data['permissions']);
+        }
+
+        return response()->noContent();
     }
+
 
     /**
      * Apagar Role

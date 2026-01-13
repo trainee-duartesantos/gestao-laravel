@@ -57,6 +57,54 @@ const fetchRoles = async () => {
     }
 };
 
+const permissionsModalOpen = ref(false);
+const permissionsLoading = ref(false);
+
+const permissionsData = ref({});
+const assignedPermissions = ref([]);
+const selectedRole = ref(null);
+
+const openPermissions = async (role) => {
+    selectedRole.value = role;
+    permissionsModalOpen.value = true;
+    permissionsLoading.value = true;
+
+    try {
+        const res = await fetch(route("roles.permissions", role.id));
+        const data = await res.json();
+
+        permissionsData.value = data.permissions;
+        assignedPermissions.value = [...data.assigned];
+    } finally {
+        permissionsLoading.value = false;
+    }
+};
+
+const savePermissions = async () => {
+    await router.put(
+        route("roles.update", selectedRole.value.id),
+        {
+            permissions: assignedPermissions.value,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                permissionsModalOpen.value = false;
+            },
+        }
+    );
+};
+
+const togglePermission = (perm) => {
+    if (assignedPermissions.value.includes(perm)) {
+        assignedPermissions.value = assignedPermissions.value.filter(
+            (p) => p !== perm
+        );
+    } else {
+        assignedPermissions.value.push(perm);
+    }
+};
+
 onMounted(fetchRoles);
 </script>
 
@@ -102,7 +150,11 @@ onMounted(fetchRoles);
                                 {{ role.permissions.length }}
                             </TableCell>
                             <TableCell class="text-right space-x-2">
-                                <Button variant="outline" size="sm">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    @click="openPermissions(role)"
+                                >
                                     Permissões
                                 </Button>
 
@@ -155,6 +207,63 @@ onMounted(fetchRoles);
 
                     <Button>
                         {{ editingRole ? "Guardar" : "Criar" }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <Dialog v-model:open="permissionsModalOpen" :key="selectedRole?.id">
+            <DialogContent class="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        Permissões — {{ selectedRole?.name }}
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div v-if="permissionsLoading" class="py-6 text-center">
+                    A carregar permissões…
+                </div>
+
+                <div v-else class="space-y-6 max-h-[60vh] overflow-y-auto">
+                    <div
+                        v-for="(perms, group) in permissionsData"
+                        :key="group"
+                        class="border rounded-lg p-4"
+                    >
+                        <h3 class="font-semibold mb-3 capitalize">
+                            {{ group }}
+                        </h3>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <label
+                                v-for="perm in perms"
+                                :key="perm"
+                                class="flex items-center gap-2 text-sm"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :value="perm"
+                                    :checked="
+                                        assignedPermissions.includes(perm)
+                                    "
+                                    @change="togglePermission(perm)"
+                                />
+
+                                {{ perm }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        @click="permissionsModalOpen = false"
+                    >
+                        Cancelar
+                    </Button>
+
+                    <Button @click="savePermissions">
+                        Guardar permissões
                     </Button>
                 </DialogFooter>
             </DialogContent>
