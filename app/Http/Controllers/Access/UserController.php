@@ -10,11 +10,10 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-
 class UserController extends Controller
 {
     use AuthorizesRequests;
-    
+
     public function page()
     {
         return Inertia::render('Access/Users/Index');
@@ -61,6 +60,15 @@ class UserController extends Controller
 
         Password::sendResetLink(['email' => $user->email]);
 
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'email' => $user->email,
+                'role' => $role->name,
+            ])
+            ->log('Criou utilizador');
+
         return back()->with('success', 'Utilizador criado com sucesso.');
     }
 
@@ -71,13 +79,13 @@ class UserController extends Controller
 
         if ($request->user()->id === $user->id && ! $request->boolean('is_active')) {
             return back()->withErrors([
-                'is_active' => 'Não pode desativar o seu próprio utilizador.'
+                'is_active' => 'Não pode desativar o seu próprio utilizador.',
             ]);
         }
 
         if ($user->hasRole('Admin') && ! $request->boolean('is_active')) {
             return back()->withErrors([
-                'is_active' => 'Não pode desativar um utilizador Admin.'
+                'is_active' => 'Não pode desativar um utilizador Admin.',
             ]);
         }
 
@@ -99,18 +107,38 @@ class UserController extends Controller
         $role = Role::findOrFail($data['role_id']);
         $user->syncRoles([$role->name]);
 
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $role->name,
+            ])
+            ->log('Atualizou utilizador');
+
         return back()->with('success', 'Utilizador atualizado com sucesso.');
     }
 
     public function destroy(Request $request, User $user)
     {
         if ($request->user()->id === $user->id) {
-            return back()->withErrors(['delete' => 'Não pode apagar o seu próprio utilizador.']);
+            return back()->withErrors([
+                'delete' => 'Não pode apagar o seu próprio utilizador.',
+            ]);
         }
 
         if ($user->hasRole('Admin')) {
-            return back()->withErrors(['delete' => 'Não pode apagar um utilizador Admin.']);
+            return back()->withErrors([
+                'delete' => 'Não pode apagar um utilizador Admin.',
+            ]);
         }
+
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'email' => $user->email,
+            ])
+            ->log('Removeu utilizador');
 
         $user->delete();
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Access\RoleController;
 use App\Http\Controllers\Access\UserController;
+use Spatie\Activitylog\Models\Activity;
 
 /*
 |--------------------------------------------------------------------------
@@ -128,8 +129,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
 
             // Countries
-            Route::get('/countries', [CountryController::class, 'page'])->name('settings.countries.page');
-            Route::get('/countries/list', [CountryController::class, 'index'])->name('settings.countries.list');
+            Route::get('/countries', [CountryController::class, 'page'])
+                ->name('settings.countries.page');
+            Route::get('/countries/list', [CountryController::class, 'index'])
+                ->name('settings.countries.list');
 
             Route::post('/countries', [CountryController::class, 'store'])
                 ->middleware('permission:settings.create')
@@ -144,8 +147,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('settings.countries.destroy');
 
             // Contact Roles
-            Route::get('/contact-roles', [ContactRoleController::class, 'page'])->name('settings.contact-roles.page');
-            Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])->name('settings.contact-roles.list');
+            Route::get('/contact-roles', [ContactRoleController::class, 'page'])
+                ->name('settings.contact-roles.page');
+            Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])
+                ->name('settings.contact-roles.list');
 
             Route::post('/contact-roles', [ContactRoleController::class, 'store'])
                 ->middleware('permission:settings.create')
@@ -158,6 +163,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/contact-roles/{contactRole}', [ContactRoleController::class, 'destroy'])
                 ->middleware('permission:settings.delete')
                 ->name('settings.contact-roles.destroy');
+
+            /*
+            |----------------------------------------------------------------------
+            | LOGS
+            |----------------------------------------------------------------------
+            */
+
+            Route::get('/logs', fn () =>
+                Inertia::render('Settings/Logs/Index')
+            )->name('settings.logs.page');
+
+            Route::get('/logs/list', function () {
+                return Activity::with('causer')
+                    ->latest()
+                    ->limit(200)
+                    ->get()
+                    ->map(fn ($log) => [
+                        'date' => $log->created_at->format('d/m/Y'),
+                        'time' => $log->created_at->format('H:i'),
+                        'user' => $log->causer?->name ?? 'Sistema',
+                        'action' => $log->description,
+                        'ip' => $log->properties['ip'] ?? null,
+                    ]);
+            })->name('settings.logs.list');
         });
 
     /*
