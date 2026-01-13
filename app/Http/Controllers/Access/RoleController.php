@@ -64,8 +64,9 @@ class RoleController extends Controller
             $role->syncPermissions($validated['permissions']);
         }
 
-        return response()->json(['success' => true]);
+        return redirect()->back();
     }
+
 
     /**
      * Atualizar Role
@@ -85,9 +86,8 @@ class RoleController extends Controller
             $role->syncPermissions($data['permissions']);
         }
 
-        return response()->noContent();
+        return redirect()->back();
     }
-
 
     /**
      * Apagar Role
@@ -95,13 +95,12 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         if ($role->name === 'Admin') {
-            return response()->json([
-                'message' => 'O role Admin não pode ser removido.'
-            ], 403);
+            abort(403, 'O role Admin não pode ser removido.');
         }
 
         $role->delete();
 
-        return response()->json(['success' => true]);
+        return redirect()->back();
     }
+
 }

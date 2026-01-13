@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@gestao.com'],
             [
                 'name' => 'Admin',
+                'phone' => null,
+                'is_active' => true,
                 'password' => bcrypt('password'),
             ]
         );
@@ -36,6 +38,8 @@ class DatabaseSeeder extends Seeder
             ['email' => 'financeiro@gestao.com'],
             [
                 'name' => 'Financeiro',
+                'phone' => null,
+                'is_active' => true,
                 'password' => bcrypt('password'),
             ]
         );
@@ -48,6 +52,8 @@ class DatabaseSeeder extends Seeder
             ['email' => 'comercial@gestao.com'],
             [
                 'name' => 'Comercial',
+                'phone' => null,
+                'is_active' => true,
                 'password' => bcrypt('password'),
             ]
         );
