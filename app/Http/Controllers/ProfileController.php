@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 
 class ProfileController extends Controller
 {

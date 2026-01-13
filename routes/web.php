@@ -14,6 +14,7 @@ use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Access\RoleController;
 use App\Http\Controllers\Access\UserController;
+
 use Spatie\Activitylog\Models\Activity;
 
 /*
@@ -21,7 +22,6 @@ use Spatie\Activitylog\Models\Activity;
 | Public
 |--------------------------------------------------------------------------
 */
-
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -36,7 +36,6 @@ Route::get('/', function () {
 | Authenticated
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
@@ -47,7 +46,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Profile
     |--------------------------------------------------------------------------
     */
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -57,7 +55,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ENTITIES (Clientes / Fornecedores)
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('permission:clients.view')->group(function () {
 
         Route::get('/clientes', [EntityController::class, 'clientsPage'])->name('clients');
@@ -92,7 +89,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | CONTACTS
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('permission:contacts.view')->group(function () {
 
         Route::get('/entities/{entity}/contacts', [ContactController::class, 'page'])
@@ -123,16 +119,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | SETTINGS
     |--------------------------------------------------------------------------
     */
-
     Route::prefix('settings')
         ->middleware('permission:settings.view')
         ->group(function () {
 
             // Countries
-            Route::get('/countries', [CountryController::class, 'page'])
-                ->name('settings.countries.page');
-            Route::get('/countries/list', [CountryController::class, 'index'])
-                ->name('settings.countries.list');
+            Route::get('/countries', [CountryController::class, 'page'])->name('settings.countries.page');
+            Route::get('/countries/list', [CountryController::class, 'index'])->name('settings.countries.list');
 
             Route::post('/countries', [CountryController::class, 'store'])
                 ->middleware('permission:settings.create')
@@ -147,10 +140,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('settings.countries.destroy');
 
             // Contact Roles
-            Route::get('/contact-roles', [ContactRoleController::class, 'page'])
-                ->name('settings.contact-roles.page');
-            Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])
-                ->name('settings.contact-roles.list');
+            Route::get('/contact-roles', [ContactRoleController::class, 'page'])->name('settings.contact-roles.page');
+            Route::get('/contact-roles/list', [ContactRoleController::class, 'index'])->name('settings.contact-roles.list');
 
             Route::post('/contact-roles', [ContactRoleController::class, 'store'])
                 ->middleware('permission:settings.create')
@@ -164,15 +155,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->middleware('permission:settings.delete')
                 ->name('settings.contact-roles.destroy');
 
-            /*
-            |----------------------------------------------------------------------
-            | LOGS
-            |----------------------------------------------------------------------
-            */
-
-            Route::get('/logs', fn () =>
-                Inertia::render('Settings/Logs/Index')
-            )->name('settings.logs.page');
+            // Logs
+            Route::get('/logs', fn () => Inertia::render('Settings/Logs/Index'))
+                ->name('settings.logs.page');
 
             Route::get('/logs/list', function () {
                 return Activity::with('causer')
@@ -180,11 +165,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     ->limit(200)
                     ->get()
                     ->map(fn ($log) => [
-                        'date' => $log->created_at->format('d/m/Y'),
-                        'time' => $log->created_at->format('H:i'),
-                        'user' => $log->causer?->name ?? 'Sistema',
+                        'date'   => $log->created_at->format('d/m/Y'),
+                        'time'   => $log->created_at->format('H:i'),
+                        'user'   => $log->causer?->name ?? 'Sistema',
                         'action' => $log->description,
-                        'ip' => $log->properties['ip'] ?? null,
+                        'ip'     => $log->properties['ip'] ?? null,
                     ]);
             })->name('settings.logs.list');
         });
@@ -194,7 +179,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ARTICLES
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('permission:articles.view')->group(function () {
 
         Route::get('/artigos', [ArticleController::class, 'page'])->name('articles.page');
@@ -219,28 +203,48 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROPOSALS
+    | PROPOSALS (UI PT: /propostas | API EN: /proposals)
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('permission:proposals.view')->group(function () {
 
+        // UI (Português)
         Route::get('/propostas', [ProposalController::class, 'page'])->name('proposals.page');
-        Route::get('/propostas/{proposal}/edit', [ProposalController::class, 'edit'])
-            ->middleware('permission:proposals.edit')
-            ->name('proposals.edit');
 
         Route::get('/propostas/create', fn () => Inertia::render('Proposals/Create'))
             ->middleware('permission:proposals.create')
             ->name('proposals.create');
 
+        Route::get('/propostas/{proposal}/edit', [ProposalController::class, 'edit'])
+            ->middleware('permission:proposals.edit')
+            ->name('proposals.edit');
+
+        // API (Inglês) -> porque o teu Edit.vue chama /proposals/...
         Route::prefix('proposals')->group(function () {
 
-            Route::get('/list', [ProposalController::class, 'index'])->name('proposals.list');
+            Route::get('/list', [ProposalController::class, 'index'])
+                ->name('proposals.list');
 
             Route::post('/', [ProposalController::class, 'store'])
                 ->middleware('permission:proposals.create')
                 ->name('proposals.store');
+
+            // 🔥 FALTAVA para o reloadProposal()
+            Route::get('/{proposal}', [ProposalController::class, 'show'])
+                ->name('proposals.show');
+
+            // 🔥 FALTAVA / usado pelo ArticleSelector -> addLine()
+            Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
+                ->middleware('permission:proposals.edit')
+                ->name('proposals.lines.store');
+
+            Route::patch('/lines/{line}', [ProposalController::class, 'updateLine'])
+                ->middleware('permission:proposals.edit')
+                ->name('proposals.lines.update');
+
+            Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
+                ->middleware('permission:proposals.edit')
+                ->name('proposals.lines.destroy');
 
             Route::post('/{proposal}/close', [ProposalController::class, 'close'])
                 ->middleware('permission:proposals.edit')
@@ -249,15 +253,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{proposal}/invoice', [ProposalController::class, 'convertToInvoice'])
                 ->middleware('permission:proposals.edit')
                 ->name('proposals.convertToInvoice');
-
-            Route::post('/{proposal}/lines', [ProposalController::class, 'addLine'])
-                ->middleware('permission:proposals.edit');
-
-            Route::patch('/lines/{line}', [ProposalController::class, 'updateLine'])
-                ->middleware('permission:proposals.edit');
-
-            Route::delete('/lines/{line}', [ProposalController::class, 'removeLine'])
-                ->middleware('permission:proposals.edit');
         });
     });
 
@@ -266,7 +261,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | INVOICES
     |--------------------------------------------------------------------------
     */
-
     Route::middleware('permission:invoices.view')->group(function () {
 
         Route::get('/faturas', [InvoiceController::class, 'page'])->name('invoices.page');
@@ -287,29 +281,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
-    Route::middleware(['auth', 'permission:users.view'])->group(function () {
-    
-        // Página
-        Route::get('/gestao-acessos/roles', [RoleController::class, 'page'])
-            ->name('roles.page');
+    /*
+    |--------------------------------------------------------------------------
+    | ACCESS MANAGEMENT (Roles / Users)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:users.view')->group(function () {
 
-        // API
+        // Roles
+        Route::get('/gestao-acessos/roles', [RoleController::class, 'page'])->name('roles.page');
         Route::get('/gestao-acessos/roles/list', [RoleController::class, 'index'])->name('roles.list');
         Route::get('/gestao-acessos/roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
-        Route::post('/gestao-acessos/roles', [RoleController::class, 'store'])->name('roles.store');
-        Route::put('/gestao-acessos/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('/gestao-acessos/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-    });
 
-    Route::middleware(['auth', 'permission:users.view'])->group(function () {
+        Route::post('/gestao-acessos/roles', [RoleController::class, 'store'])
+            ->middleware('permission:users.create')
+            ->name('roles.store');
 
-        // Página
-        Route::get('/gestao-acessos/utilizadores', [UserController::class, 'page'])
-            ->name('users.page');
+        Route::put('/gestao-acessos/roles/{role}', [RoleController::class, 'update'])
+            ->middleware('permission:users.edit')
+            ->name('roles.update');
 
-        // API
-        Route::get('/gestao-acessos/utilizadores/list', [UserController::class, 'index'])
-            ->name('users.list');
+        Route::delete('/gestao-acessos/roles/{role}', [RoleController::class, 'destroy'])
+            ->middleware('permission:users.delete')
+            ->name('roles.destroy');
+
+        // Users
+        Route::get('/gestao-acessos/utilizadores', [UserController::class, 'page'])->name('users.page');
+        Route::get('/gestao-acessos/utilizadores/list', [UserController::class, 'index'])->name('users.list');
 
         Route::post('/gestao-acessos/utilizadores', [UserController::class, 'store'])
             ->middleware('permission:users.create')
@@ -323,7 +321,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:users.delete')
             ->name('users.destroy');
     });
-
 });
 
 require __DIR__ . '/auth.php';

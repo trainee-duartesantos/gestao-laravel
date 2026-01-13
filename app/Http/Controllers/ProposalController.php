@@ -105,7 +105,7 @@ class ProposalController extends Controller
             ],
 
             // 🔑 ISTO É O QUE FALTAVA
-            'articles' => Article::where('active', true)
+            'articles' => Article::where('status', 'active')
                 ->orderBy('name')
                 ->get(['id', 'name', 'price']),
         ]);
