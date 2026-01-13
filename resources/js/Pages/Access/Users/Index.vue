@@ -3,6 +3,20 @@ import { ref, onMounted } from "vue";
 import { useForm, router } from "@inertiajs/vue3";
 import axios from "axios";
 
+/* --------------------------------------------------------------------------
+| UI (Shadcn)
+-------------------------------------------------------------------------- */
+import {
+    Table,
+    TableHeader,
+    TableHead,
+    TableRow,
+    TableBody,
+    TableCell,
+} from "@/Components/ui/table";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/Components/ui/card";
+
 import {
     Dialog,
     DialogContent,
@@ -10,6 +24,17 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/Components/ui/dialog";
+
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogAction,
+    AlertDialogCancel,
+} from "@/Components/ui/alert-dialog";
 
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
@@ -23,11 +48,27 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 
+/* --------------------------------------------------------------------------
+| Permissions
+-------------------------------------------------------------------------- */
+import { usePermissions } from "@/composables/usePermissions";
+const { can, hasRole } = usePermissions();
+
+/* --------------------------------------------------------------------------
+| State
+-------------------------------------------------------------------------- */
 const users = ref([]);
 const roles = ref([]);
+
 const open = ref(false);
 const editingUser = ref(null);
 
+const deleteDialogOpen = ref(false);
+const userToDelete = ref(null);
+
+/* --------------------------------------------------------------------------
+| Form
+-------------------------------------------------------------------------- */
 const form = useForm({
     name: "",
     email: "",
@@ -36,6 +77,9 @@ const form = useForm({
     is_active: true,
 });
 
+/* --------------------------------------------------------------------------
+| Data loading
+-------------------------------------------------------------------------- */
 const loadUsers = async () => {
     users.value = (await axios.get(route("users.list"))).data;
 };
@@ -49,6 +93,9 @@ onMounted(() => {
     loadRoles();
 });
 
+/* --------------------------------------------------------------------------
+| Create / Edit
+-------------------------------------------------------------------------- */
 const openCreate = () => {
     editingUser.value = null;
     form.reset();
@@ -69,6 +116,7 @@ const openEdit = (user) => {
 const submit = () => {
     if (editingUser.value) {
         form.put(route("users.update", editingUser.value.id), {
+            preserveScroll: true,
             onSuccess: () => {
                 open.value = false;
                 loadUsers();
@@ -76,6 +124,7 @@ const submit = () => {
         });
     } else {
         form.post(route("users.store"), {
+            preserveScroll: true,
             onSuccess: () => {
                 open.value = false;
                 loadUsers();
@@ -84,62 +133,119 @@ const submit = () => {
     }
 };
 
-const removeUser = (user) => {
-    if (!confirm(`Apagar utilizador ${user.name}?`)) return;
+/* --------------------------------------------------------------------------
+| Delete (AlertDialog)
+-------------------------------------------------------------------------- */
+const confirmDelete = (user) => {
+    userToDelete.value = user;
+    deleteDialogOpen.value = true;
+};
 
-    router.delete(route("users.destroy", user.id), {
-        onSuccess: loadUsers,
+const destroyUser = () => {
+    if (!userToDelete.value) return;
+
+    router.delete(route("users.destroy", userToDelete.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            deleteDialogOpen.value = false;
+            userToDelete.value = null;
+            loadUsers();
+        },
     });
 };
 </script>
 
 <template>
     <div class="space-y-6">
-        <div class="flex justify-between items-center">
+        <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">Utilizadores</h1>
-            <Button @click="openCreate">Novo Utilizador</Button>
+
+            <Button v-if="can('users.create')" @click="openCreate">
+                Criar Utilizador
+            </Button>
         </div>
 
-        <table class="w-full border text-sm">
-            <thead>
-                <tr class="bg-muted">
-                    <th class="p-2">Nome</th>
-                    <th class="p-2">Email</th>
-                    <th class="p-2">Telemóvel</th>
-                    <th class="p-2">Grupo</th>
-                    <th class="p-2">Estado</th>
-                    <th class="p-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="u in users" :key="u.id" class="border-t">
-                    <td class="p-2">{{ u.name }}</td>
-                    <td class="p-2">{{ u.email }}</td>
-                    <td class="p-2">{{ u.phone ?? "-" }}</td>
-                    <td class="p-2">{{ u.role }}</td>
-                    <td class="p-2">
-                        <span
-                            :class="
-                                u.is_active ? 'text-green-600' : 'text-red-600'
-                            "
-                        >
-                            {{ u.is_active ? "Ativo" : "Inativo" }}
-                        </span>
-                    </td>
-                    <td class="p-2 space-x-2">
-                        <Button size="sm" variant="outline" @click="openEdit(u)"
-                            >Editar</Button
-                        >
-                        <Button
-                            size="sm"
-                            variant="destructive"
-                            @click="removeUser(u)"
-                            >Apagar</Button
-                        >
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <Card>
+            <CardHeader>
+                <CardTitle>Utilizadores existentes</CardTitle>
+            </CardHeader>
+
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Telemóvel</TableHead>
+                            <TableHead>Grupo</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead class="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                        <TableRow v-if="users.length === 0">
+                            <TableCell colspan="6" class="text-center py-6">
+                                Nenhum utilizador encontrado.
+                            </TableCell>
+                        </TableRow>
+
+                        <TableRow v-for="u in users" :key="u.id">
+                            <TableCell class="font-medium">
+                                {{ u.name }}
+                            </TableCell>
+
+                            <TableCell>{{ u.email }}</TableCell>
+
+                            <TableCell>{{ u.phone ?? "-" }}</TableCell>
+
+                            <TableCell>{{ u.role }}</TableCell>
+
+                            <TableCell>
+                                <span
+                                    :class="
+                                        u.is_active
+                                            ? 'text-green-600'
+                                            : 'text-red-600'
+                                    "
+                                >
+                                    {{ u.is_active ? "Ativo" : "Inativo" }}
+                                </span>
+                            </TableCell>
+
+                            <TableCell class="text-right space-x-2">
+                                <Button
+                                    v-if="
+                                        can('users.edit') &&
+                                        (!u.role ||
+                                            u.role !== 'Admin' ||
+                                            hasRole('Admin'))
+                                    "
+                                    size="sm"
+                                    variant="outline"
+                                    @click="openEdit(u)"
+                                >
+                                    Editar
+                                </Button>
+
+                                <Button
+                                    v-if="
+                                        can('users.delete') &&
+                                        u.id !== $page.props.auth.user.id &&
+                                        u.role !== 'Admin'
+                                    "
+                                    size="sm"
+                                    variant="destructive"
+                                    @click="confirmDelete(u)"
+                                >
+                                    Apagar
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
 
         <!-- MODAL -->
         <Dialog v-model:open="open">
@@ -210,5 +316,31 @@ const removeUser = (user) => {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        <AlertDialog v-model:open="deleteDialogOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle> Apagar utilizador </AlertDialogTitle>
+
+                    <AlertDialogDescription>
+                        Tem a certeza que deseja apagar o utilizador
+                        <strong>{{ userToDelete?.name }}</strong
+                        >?
+                        <br />
+                        Esta ação não pode ser revertida.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel> Cancelar </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        @click="destroyUser"
+                    >
+                        Apagar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
