@@ -33,7 +33,7 @@ class Entity extends Model
         // cifrados
         'address' => 'encrypted',
         'notes'   => 'encrypted',
-        'email'   => 'encrypted',
+        //'email'   => 'encrypted',
         'phone'   => 'encrypted',
         'mobile'  => 'encrypted',
 
@@ -64,9 +64,14 @@ class Entity extends Model
     public function setEmailAttribute($value): void
     {
         $normalized = Normalize::email($value);
-        $this->attributes['email'] = $normalized; // cast encriptado faz o resto
+
+        // email NÃO é encriptado
+        $this->attributes['email'] = $normalized;
+
+        // hash continua OK
         $this->attributes['email_hash'] = Hashing::sha256($normalized);
     }
+
 
     public function setPhoneAttribute($value): void
     {
