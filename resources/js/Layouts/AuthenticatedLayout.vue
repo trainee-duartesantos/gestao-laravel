@@ -1,13 +1,18 @@
 <script setup>
 import { ref } from "vue";
+import { Link } from "@inertiajs/vue3";
+
 import ApplicationLogo from "@/Components/ApplicationLogo.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import DropdownLink from "@/Components/DropdownLink.vue";
 import NavLink from "@/Components/NavLink.vue";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink.vue";
-import { Link } from "@inertiajs/vue3";
+
+import { usePermissions } from "@/composables/usePermissions";
 
 const showingNavigationDropdown = ref(false);
+
+const { can, hasRole } = usePermissions();
 </script>
 
 <template>
@@ -32,6 +37,7 @@ const showingNavigationDropdown = ref(false);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
+                                    v-if="can('clients.view')"
                                     :href="route('clients')"
                                     :active="route().current('clients')"
                                 >
@@ -39,10 +45,43 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
 
                                 <NavLink
+                                    v-if="can('suppliers.view')"
                                     :href="route('suppliers')"
                                     :active="route().current('suppliers')"
                                 >
                                     Fornecedores
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="can('articles.view')"
+                                    :href="route('articles.page')"
+                                    :active="route().current('articles.*')"
+                                >
+                                    Artigos
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="can('proposals.view')"
+                                    :href="route('proposals.page')"
+                                    :active="route().current('proposals.*')"
+                                >
+                                    Propostas
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="can('invoices.view')"
+                                    :href="route('invoices.page')"
+                                    :active="route().current('invoices.*')"
+                                >
+                                    Faturas
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="hasRole('Admin')"
+                                    :href="route('settings.countries.page')"
+                                    :active="route().current('settings.*')"
+                                >
+                                    Configurações
                                 </NavLink>
                             </div>
                         </div>
@@ -144,14 +183,33 @@ const showingNavigationDropdown = ref(false);
                     }"
                     class="sm:hidden"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
-                    </div>
+                    <ResponsiveNavLink
+                        v-if="can('clients.view')"
+                        :href="route('clients')"
+                    >
+                        Clientes
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('suppliers.view')"
+                        :href="route('suppliers')"
+                    >
+                        Fornecedores
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('articles.view')"
+                        :href="route('articles.page')"
+                    >
+                        Artigos
+                    </ResponsiveNavLink>
+
+                    <ResponsiveNavLink
+                        v-if="can('invoices.view')"
+                        :href="route('invoices.page')"
+                    >
+                        Faturas
+                    </ResponsiveNavLink>
 
                     <!-- Responsive Settings Options -->
                     <div class="border-t border-gray-200 pb-1 pt-4">
