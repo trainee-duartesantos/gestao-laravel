@@ -28,6 +28,7 @@ class UserController extends Controller
                 'phone' => $user->phone,
                 'is_active' => $user->is_active,
                 'role' => $user->roles->first()?->name,
+                'role_id' => $user->roles->first()?->id,
             ]);
     }
 
@@ -37,7 +38,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:30',
-            'role' => 'required|exists:roles,name',
+            'role_id' => 'required|exists:roles,id',
             'is_active' => 'required|boolean',
         ]);
 
@@ -73,12 +74,12 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:30',
-            'role' => 'required|exists:roles,name',
+            'role_id' => 'required|exists:roles,id',
             'is_active' => 'required|boolean',
         ]);
 
         $user->update($data);
-        $user->syncRoles([$data['role']]);
+        $user->syncRoles([$data['role_id']]);
 
         return back()->with('success', 'Utilizador atualizado com sucesso.');
     }

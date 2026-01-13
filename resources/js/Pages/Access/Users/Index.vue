@@ -32,7 +32,7 @@ const form = useForm({
     name: "",
     email: "",
     phone: "",
-    role: "",
+    role_id: null,
     is_active: true,
 });
 
@@ -61,7 +61,7 @@ const openEdit = (user) => {
     form.name = user.name;
     form.email = user.email;
     form.phone = user.phone;
-    form.role = user.role;
+    form.role_id = user.role_id;
     form.is_active = user.is_active;
     open.value = true;
 };
@@ -172,17 +172,18 @@ const removeUser = (user) => {
 
                     <div>
                         <Label>Grupo de Permissões</Label>
-                        <Select v-model="form.role">
+                        <Select v-model="form.role_id">
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecionar grupo" />
                             </SelectTrigger>
+
                             <SelectContent>
                                 <SelectItem
                                     v-for="r in roles"
-                                    :key="r"
-                                    :value="r"
+                                    :key="r.id"
+                                    :value="r.id"
                                 >
-                                    {{ r }}
+                                    {{ r.name }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -195,7 +196,15 @@ const removeUser = (user) => {
                 </div>
 
                 <DialogFooter>
-                    <Button :disabled="form.processing" @click="submit">
+                    <Button
+                        :disabled="
+                            form.processing ||
+                            !form.name ||
+                            !form.email ||
+                            !form.role_id
+                        "
+                        @click="submit"
+                    >
                         Guardar
                     </Button>
                 </DialogFooter>
